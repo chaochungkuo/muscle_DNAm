@@ -1,0 +1,39 @@
+# R
+.Rhistory
+.Rproj.user/
+.RData
+.Rdata
+.RDS
+*.rds
+*.RData
+
+# Python
+__pycache__/
+.ipynb_checkpoints/
+*.pyc
+
+# Outputs
+*.html
+*.pdf
+*.png
+*.jpg
+*.jpeg
+*.tif
+*.tiff
+*.svg
+*.eps
+
+# Misc
+.DS_Store
+.idea/
+.vscode/
+
+# renv local library
+renv/library/
+
+# Results directories
+results/
+figures/
+output/
+plots/
+tables/

@@ -1,0 +1,361 @@
+---
+title: "GO heatmap 240814_Popzhelyazkova_Bremer_Neuropathologie_DNAmArray"
+author:
+  Joseph Kuo
+date: "Last compiled on `r format(Sys.time(), '%d %B, %Y')`"
+output:
+  html_document:
+    code_folding: hide
+    df_print: paged
+    toc: true
+    toc_float:
+      toc_collapsed: true
+    toc_depth: 3
+    number_sections: false
+    theme: lumen
+---
+
+```{r setup, echo=TRUE, results="hide", warning=FALSE, message=FALSE}
+
+# load packages required for analysis
+library(tibble)
+library(pheatmap)
+library(ggplot2)
+library(DT)
+library(openxlsx)
+library(dplyr)
+library(tidyr)
+ # options(warn = -1)
+
+Tag_this_analysis <- "GOheatmap"
+data_dir <- "../../data"
+output_dir <- "../../output"
+dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
+```
+
+```{r, echo=TRUE, results='asis', warning=FALSE, message=FALSE}
+# Specify the file path
+file_path <- file.path(data_dir, "GSE315831", "Supplementary_Table_3_Functional_analysis.xlsx")
+# Get all sheet names
+sheet_names <- getSheetNames(file_path)
+sheet_names <- sheet_names[grepl("versus control", sheet_names)]
+# Function to read and standardize column names
+read_and_standardize <- function(sheet) {
+  df <- read.xlsx(file_path, sheet = sheet, colNames = TRUE)
+
+  # Rename `color` → `group` if present
+  if ("color" %in% colnames(df)) {
+    colnames(df)[colnames(df) == "color"] <- "group"
+  }
+
+  # ---- STANDARDIZE COLUMN TYPES ----
+  # Ensure ID is character
+  if ("ID" %in% colnames(df)) {
+    df$ID <- as.character(df$ID)
+  }
+
+  # Standardize other potential type conflicts (optional)
+  if ("Description" %in% colnames(df)) {
+    df$Description <- as.character(df$Description)
+  }
+  if ("geneID" %in% colnames(df)) {
+    df$geneID <- as.character(df$geneID)
+  }
+  if ("group" %in% colnames(df)) {
+    df$group <- as.character(df$group)
+  }
+
+  # Add sheet name column
+  df$SheetName <- sheet
+  print(sheet)
+  print(colnames(df))
+  df$rank <- seq(1, nrow(df))
+  return(df)
+}
+
+# Read all sheets, standardize columns, and combine
+all_sheets_combined <- lapply(sheet_names, read_and_standardize) %>%
+  bind_rows()
+
+GO_ids_top100 <- all_sheets_combined %>%
+  filter(rank <= 100) %>%      # pick only top 100 per sheet
+  pull(ID) %>%                 # extract ID column
+  unique()                     # keep unique GO IDs
+
+# View the first few rows
+head(all_sheets_combined)
+```
+
+```{r, echo=TRUE, results='asis', warning=FALSE, message=FALSE}
+# Convert p.adjust to -log10 scale
+all_sheets_combined <- all_sheets_combined %>%
+  mutate(log_padj = -log10(p.adjust))
+
+# Step 1: Filter only GO terms that have at least one group label
+filtered_id <- all_sheets_combined %>%
+  filter(!is.na(group)) %>%
+  select(ID) %>%
+  distinct()
+
+# Step 2: Keep only rows with GO IDs present in `filtered_id`
+filtered_data <- all_sheets_combined %>%
+  semi_join(filtered_id, by = "ID")
+
+# Step 3: Convert data to a wide matrix format (GO IDs as rows, SheetNames as columns)
+heatmap_matrix <- filtered_data %>%
+  select(ID, SheetName, log_padj) %>%
+  pivot_wider(names_from = SheetName, values_from = log_padj, values_fill = NA) %>%
+  column_to_rownames("ID") %>%
+  as.matrix()
+
+# Step 4: Create row annotation (GO term groups)
+row_annotation <- all_sheets_combined %>%
+  filter(!is.na(group)) %>%  # Remove rows where group is NA
+  select(ID, group) %>%
+  distinct() %>%             # Ensure unique (ID, group) pairs
+  group_by(ID) %>%
+  slice(1) %>%               # Keep only the first occurrence of each ID
+  ungroup() %>%
+  column_to_rownames("ID")   # Convert ID into row names for pheatmap
+# Define the column annotation (Manually specify 'hyper' or 'hypo' for each SheetName)
+column_annotation <- data.frame(
+  Regulation = ifelse(grepl("hyper", colnames(heatmap_matrix)), "Hyper", "Hypo")
+)
+
+# Convert row names for annotation
+rownames(column_annotation) <- colnames(heatmap_matrix)
+
+# Step 5: Generate heatmap
+heatmap_matrix[is.na(heatmap_matrix)] <- 0
+pheatmap(
+  heatmap_matrix,
+  annotation_row = row_annotation,  # Annotate rows with group information
+  annotation_col = column_annotation, # Column annotation (Hyper/Hypo)
+  cluster_rows = FALSE,             # Cluster rows
+  cluster_cols = FALSE,             # Cluster columns
+  border_color = NA,               # Remove borders
+  fontsize = 12,                    # Increase font size
+  fontsize_row = 8,                 # Adjust row label font size
+  fontsize_col = 10,                 # Adjust column label font size
+  width = 15, height = 15,            # High-resolution settings
+  filename = "GOheatmap.pdf" # Save high-quality PDF
+)
+
+# Save as PNG (optional)
+ggsave(file.path(output_dir, "heatmap_high_quality.png"), width = 8, height = 10, dpi = 600)
+```
+
+```{r, echo=TRUE, results='asis', warning=FALSE, message=FALSE, dpi=600}
+# Convert p.adjust to -log10 scale
+all_sheets_combined <- all_sheets_combined %>%
+  mutate(log_padj = -log10(p.adjust))
+
+# Step 1: Filter only GO terms that have at least one group label (keep full data)
+filtered_id <- all_sheets_combined %>%
+  filter(!is.na(group)) %>%
+  select(ID) %>%
+  distinct()
+
+# Step 2: Keep *all rows* but only for GO IDs in the top100 list
+filtered_data <- all_sheets_combined %>%
+  filter(ID %in% GO_ids_top100)
+
+# Step 3: Convert data to wide matrix format (GO IDs as rows, SheetNames as columns)
+heatmap_matrix <- filtered_data %>%
+  select(ID, SheetName, log_padj) %>%
+  pivot_wider(names_from = SheetName, values_from = log_padj, values_fill = NA) %>%
+  column_to_rownames("ID") %>%
+  as.matrix()
+
+# Step 4: Create row annotation
+row_annotation <- all_sheets_combined %>%
+  filter(!is.na(group)) %>%
+  select(ID, group) %>%
+  distinct() %>%
+  filter(ID %in% GO_ids_top100) %>%   # Only keep top100 GO terms
+  group_by(ID) %>%
+  slice(1) %>%
+  ungroup() %>%
+  column_to_rownames("ID")
+
+# Step 5: Define column annotation
+column_annotation <- data.frame(
+  Regulation = ifelse(grepl("hyper", colnames(heatmap_matrix)), "Hyper", "Hypo")
+)
+rownames(column_annotation) <- colnames(heatmap_matrix)
+
+# Step 6: Extract disease name correctly
+clean_names <- colnames(heatmap_matrix) %>%
+  sub("^(hyper|hypo)methyl_", "", .) %>%      # remove "hypermethyl_" or "hypomethyl_"
+  sub(" versus control$", "", .)              # remove " versus control"
+
+# Now order columns by disease sequence
+ordered_columns <- colnames(heatmap_matrix)[
+  order(match(clean_names, disease_order))
+]
+
+# Step 7: Split into hyper and hypo matrices
+hyper_matrix <- heatmap_matrix[, grepl("hyper", colnames(heatmap_matrix))]
+hyper_matrix <- hyper_matrix[, ordered_columns[ordered_columns %in% colnames(hyper_matrix)]]
+
+hypo_matrix <- heatmap_matrix[, grepl("hypo", colnames(heatmap_matrix))]
+hypo_matrix <- hypo_matrix[, ordered_columns[ordered_columns %in% colnames(hypo_matrix)]]
+
+# Convert NA to 0
+hyper_matrix[is.na(hyper_matrix)] <- 0
+hypo_matrix[is.na(hypo_matrix)] <- 0
+
+# Step 7b: Order rows by group
+ordered_rows <- row_annotation %>%
+  arrange(group) %>%
+  rownames()
+
+hyper_matrix <- hyper_matrix[ordered_rows, , drop = FALSE]
+hypo_matrix <- hypo_matrix[ordered_rows, , drop = FALSE]
+
+# Find where groups change (for row gaps)
+group_changes <- which(diff(as.numeric(factor(row_annotation[ordered_rows, "group"]))) != 0)
+
+# Step 8: Draw heatmaps
+pheatmap(
+  hyper_matrix,
+  annotation_row = row_annotation,
+  cluster_rows = FALSE,
+  cluster_cols = FALSE,
+  border_color = NA,
+  fontsize = 12,
+  fontsize_row = 8,
+  fontsize_col = 10,
+  width = 15, height = 15,
+  filename = "GOheatmap_hyper.pdf",
+  color = colorRampPalette(c("white", "red"))(50),
+  gaps_row = group_changes
+)
+
+pheatmap(
+  hypo_matrix,
+  annotation_row = row_annotation,
+  cluster_rows = FALSE,
+  cluster_cols = FALSE,
+  border_color = NA,
+  fontsize = 12,
+  fontsize_row = 8,
+  fontsize_col = 10,
+  width = 15, height = 15,
+  filename = "GOheatmap_hypo.pdf",
+  color = colorRampPalette(c("white", "blue"))(50),
+  gaps_row = group_changes
+)
+# 
+# # Convert p.adjust to -log10 scale
+# all_sheets_combined <- all_sheets_combined %>%
+#   mutate(log_padj = -log10(p.adjust))
+# 
+# # Step 1: Filter only GO terms that have at least one group label
+# filtered_id <- all_sheets_combined %>%
+#   filter(!is.na(group)) %>%
+#   select(ID) %>%
+#   distinct()
+# 
+# # Step 2: Keep only rows with GO IDs present in `filtered_id`
+# filtered_data <- all_sheets_combined %>%
+#   semi_join(GO_ids_top100, by = "ID")
+# 
+# # Step 3: Convert data to a wide matrix format (GO IDs as rows, SheetNames as columns)
+# heatmap_matrix <- filtered_data %>%
+#   select(ID, SheetName, log_padj) %>%
+#   pivot_wider(names_from = SheetName, values_from = log_padj, values_fill = NA) %>%
+#   column_to_rownames("ID") %>%
+#   as.matrix()
+# 
+# # Step 4: Create row annotation (GO term groups)
+# row_annotation <- all_sheets_combined %>%
+#   filter(!is.na(group)) %>%
+#   select(ID, group) %>%
+#   distinct() %>%
+#   group_by(ID) %>%
+#   slice(1) %>%
+#   ungroup() %>%
+#   column_to_rownames("ID")
+# 
+# # Step 5: Define the column annotation and order diseases
+# column_annotation <- data.frame(
+#   Regulation = ifelse(grepl("hyper", colnames(heatmap_matrix)), "Hyper", "Hypo")
+# )
+# rownames(column_annotation) <- colnames(heatmap_matrix)
+# 
+# # Step 6: Reorder the columns according to disease order: PM, IBM, NMA, ALS, MMC
+# disease_order <- c("PM", "IBM", "NMA", "ALS", "MMC")
+# 
+# # Ensure this order applies to both "hyper" and "hypo"
+# ordered_columns <- colnames(heatmap_matrix)[order(match(sub("_hyper|_hypo", "", colnames(heatmap_matrix)), disease_order))]
+# 
+# # Step 7: Split into "hyper" and "hypo" heatmaps
+# # Separate Hyper Matrix
+# hyper_matrix <- heatmap_matrix[, grepl("hyper", colnames(heatmap_matrix))]
+# hyper_matrix <- hyper_matrix[, ordered_columns[ordered_columns %in% colnames(hyper_matrix)]] # Reorder
+# 
+# # Separate Hypo Matrix
+# hypo_matrix <- heatmap_matrix[, grepl("hypo", colnames(heatmap_matrix))]
+# hypo_matrix <- hypo_matrix[, ordered_columns[ordered_columns %in% colnames(hypo_matrix)]] # Reorder
+# 
+# # Convert NA values to 0
+# hyper_matrix[is.na(hyper_matrix)] <- 0
+# hypo_matrix[is.na(hypo_matrix)] <- 0
+# 
+# # Order rows by group
+# ordered_rows <- row_annotation %>%
+#   arrange(group) %>%
+#   rownames()
+# 
+# # Reorder heatmap matrix accordingly
+# hyper_matrix <- hyper_matrix[ordered_rows, , drop = FALSE]
+# hypo_matrix <- hypo_matrix[ordered_rows, , drop = FALSE]
+# 
+# # Find row indices where groups change (to add gaps)
+# group_changes <- which(diff(as.numeric(factor(row_annotation[ordered_rows, "group"]))) != 0)
+# 
+# # Define a one-directional color scale (e.g., white → red)
+# one_direction_color <- colorRampPalette(c("white", "red"))(50)  # White to red
+# 
+# # Step 8: Generate heatmaps
+# pheatmap(
+#   hyper_matrix,
+#   annotation_row = row_annotation,
+#   cluster_rows = FALSE,
+#   cluster_cols = FALSE,
+#   border_color = NA,
+#   fontsize = 12,
+#   fontsize_row = 8,
+#   fontsize_col = 10,
+#   width = 15, height = 15,
+#   filename = "GOheatmap_hyper.pdf",
+#   color = colorRampPalette(c("white", "red"))(50),
+#   gaps_row = group_changes
+# )
+# 
+# pheatmap(
+#   hypo_matrix,
+#   annotation_row = row_annotation, 
+#   cluster_rows = FALSE,
+#   cluster_cols = FALSE,
+#   border_color = NA,
+#   fontsize = 12,
+#   fontsize_row = 8,
+#   fontsize_col = 10,
+#   width = 15, height = 15,
+#   filename = "GOheatmap_hypo.pdf",
+#   color = colorRampPalette(c("white", "blue"))(50),
+#   gaps_row = group_changes
+# )
+```
+
+# References
+
+<div id="refs"></div>
+
+# R session information
+
+```{r session, echo=TRUE, results='markup', warning=FALSE, message=TRUE}
+sessionInfo()
+```
