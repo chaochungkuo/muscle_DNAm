@@ -37,3 +37,8 @@ figures/
 output/
 plots/
 tables/
+
+# ML notebook generated files
+analysis/07_ml/outputs/
+analysis/07_ml/reports/
+analysis/07_ml/.quarto/

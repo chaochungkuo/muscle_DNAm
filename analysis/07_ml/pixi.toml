@@ -1,0 +1,24 @@
+[project]
+name = "muscle-dnam-ml"
+channels = ["conda-forge"]
+platforms = ["linux-64"]
+version = "0.1.0"
+
+[tasks]
+rerun = "bash script_rerun_notebooks.sh"
+render = "bash script_render_html.sh"
+
+[dependencies]
+python = ">=3.11,<3.12"
+ipykernel = "*"
+jupyter = "*"
+nbconvert = "*"
+numpy = "*"
+pandas = "*"
+scipy = "*"
+scikit-learn = "*"
+matplotlib = "*"
+seaborn = "*"
+plotly = "*"
+joblib = "*"
+quarto = "*"

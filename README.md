@@ -14,7 +14,7 @@ Array data analysis was performed using R v.4.3.3, using a number of packages fr
 
 ### Supervised Learning for Predicting Diagnosis
 
-The normalized M values of 779,612 CpG sites were loaded, and CpG sites with low variance (331,054) were removed. Univariate feature selection was then applied to retain the top 2,000 CpG sites. Of these, 50% were selected based on their mutual information with the target variables. Finally, Random Forest Feature Selection was applied to identify the CpG sites most relevant to their labels, resulting in a final selection of 50 CpG sites for supervised learning. The dataset was split into a training set (n=45) and a test set (n=30) while maintaining the proportional distribution of labels. K-fold cross-validation (k=5) was employed for model evaluation. Supervised learning algorithms, including logistic regression, decision trees, random forests, and support vector machines (SVM), were implemented using the scikit-learn Python package (Pedregosa et al 2011).
+The normalized M values were loaded for supervised diagnosis prediction using a leakage-safe workflow. The dataset was first split into stratified training and held-out test sets. Low-variance filtering, univariate feature selection, mutual-information feature selection, scaling, and recursive feature elimination were then fitted on the training set only. The held-out test set and unknown application samples were transformed with the fitted feature-selection artifacts, without using their labels to select CpG sites. K-fold cross-validation (k=5) was used for hyperparameter tuning within the training set. Supervised learning algorithms, including logistic regression, decision trees, random forests, and support vector machines (SVM), were implemented using the scikit-learn Python package (Pedregosa et al 2011). Exploratory full-dataset feature-selection visualizations are kept separate from the benchmarking workflow.
 
 ## Repo layout
 - `analysis/01_qc` QC notebook
@@ -23,8 +23,7 @@ The normalized M values of 779,612 CpG sites were loaded, and CpG sites with low
 - `analysis/04_functional` functional analysis and GO heatmap
 - `analysis/05_visualization` visualization steps
 - `analysis/06_gene_quantification` gene quantification
-- `analysis/07_ml` supervised learning notebooks (Python)
-- `env/` Python requirements
+- `analysis/07_ml` leakage-safe supervised learning notebooks (Python)
 - `scripts/` helper scripts
 - `data/` placeholder for raw data (not included)
 - `metadata/` placeholder for sample metadata (if shareable)
@@ -32,7 +31,7 @@ The normalized M values of 779,612 CpG sites were loaded, and CpG sites with low
 
 ## Reproducibility
 - R: `renv.lock` (repo root)
-- Python: `env/requirements.txt`
+- Python: `analysis/07_ml/conda_environment.yml`, `analysis/07_ml/pixi.toml`, or `analysis/07_ml/requirements.txt`
 
 ## Notes
 - Raw data and generated results are intentionally excluded.

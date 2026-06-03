@@ -1,0 +1,18 @@
+name: muscle-dnam-ml
+channels:
+  - conda-forge
+dependencies:
+  - python=3.11
+  - ipykernel
+  - jupyter
+  - nbconvert
+  - numpy
+  - pandas
+  - scipy
+  - scikit-learn
+  - matplotlib
+  - seaborn
+  - plotly
+  - joblib
+  - quarto
+  - pip
