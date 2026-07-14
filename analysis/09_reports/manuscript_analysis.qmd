@@ -1,0 +1,188 @@
+---
+title: "DNA methylation analysis of non-neoplastic skeletal muscle pathology"
+subtitle: "Integrated analysis report aligned to the revised manuscript"
+author: "Chao-Chung Kuo"
+date: today
+format:
+  html:
+    toc: true
+    toc-depth: 3
+    toc-location: left
+    code-fold: true
+    embed-resources: true
+    theme: cosmo
+    css: report.css
+    page-layout: full
+    smooth-scroll: true
+execute:
+  echo: false
+  warning: false
+  message: false
+---
+
+```{r}
+root <- normalizePath("../..")
+tab <- function(x) read.delim(file.path(root,x),check.names=FALSE)
+meta <- tab("results/tables/analysis_metadata.tsv")
+pca_assoc <- tab("results/tables/pc_metadata_associations.tsv")
+tsne_sens <- tab("results/tables/tsne_sensitivity_summary.tsv")
+subset_summary <- tab("results/tables/subset_analysis_summary.tsv")
+design_audit <- tab("results/tables/differential_design_estimability.tsv")
+dm_sens <- tab("results/tables/differential_confounder_sensitivity.tsv")
+metadata_ml <- tab("results/tables/metadata_only_classifier.tsv")
+patient_ml <- tab("results/tables/patient_aware_ml_metrics.tsv")
+patient_block <- tab("results/tables/patient_block_correlation.tsv")
+```
+
+# Scope and analytical position
+
+This report integrates the reproducible analyses supporting the revised manuscript.
+The cohort contains `r nrow(meta)` post-QC skeletal-muscle samples from
+`r length(unique(meta$patient_id))` patients and 771,381 CpG
+probes. The analyses support disease-group-associated methylation structure, but do
+not establish clinically validated disease-entity classifiers. The cohort is small
+and structurally imbalanced with respect to source, Sentrix ID, age, sex, and biopsy
+site. These variables must therefore be considered when interpreting unsupervised,
+differential, functional, and supervised results.
+
+# Cohort and metadata
+
+```{r}
+knitr::kable(as.data.frame(table(meta$display_group)),col.names=c("Disease group","N"))
+```
+
+Juliane's reviewer-round Excel table is the authoritative metadata source for the
+bias checks. The supplied `lymphomonocytes` category is displayed descriptively,
+but its definition and provenance are unknown to the analyst; it is not interpreted
+or used in adjustment models. Unavailable pathology variables are not inferred.
+
+# Unsupervised structure
+
+## PCA and t-SNE
+
+The primary scaled PCA was calculated from the complete post-QC M-value matrix.
+The baseline t-SNE used the complete matrix as input, with the `Rtsne` defaults
+`pca=TRUE`, `pca_center=TRUE`, `pca_scale=FALSE`, and `initial_dims=50`, followed
+by perplexity 15, theta 0.5, and random seed 42. Thus, t-SNE operated on 50
+internally derived centered, unscaled PCs rather than directly on 771,381 dimensions.
+
+```{r, out.width='100%', fig.show='asis'}
+knitr::include_graphics(c(file.path(root,"figures/web/Figure_unsupervised_PCA.png"),
+  file.path(root,"figures/web/Figure_unsupervised_tSNE.png")))
+```
+
+Disease group had a strong association with PC1 in both scaled and unscaled PCA
+(`r sprintf('eta-squared %.3f and %.3f',pca_assoc$eta_squared[pca_assoc$PCA=='scaled' & pca_assoc$PC=='PC1' & pca_assoc$variable=='display_group'],pca_assoc$eta_squared[pca_assoc$PCA=='unscaled' & pca_assoc$PC=='PC1' & pca_assoc$variable=='display_group'])`).
+However, Sentrix and source variables were also strongly associated with leading PCs,
+so disease and technical/structural effects cannot be treated as independent.
+
+```{r, out.width='100%'}
+knitr::include_graphics(file.path(root,"figures/web/Figure_PC_metadata_associations.png"))
+```
+
+## Stability and label-free correlation
+
+The t-SNE sensitivity grid included five initial dimensions, four perplexities, and
+ten seeds (`r nrow(tsne_sens)` runs). The variability in Procrustes correlation shows
+that exact two-dimensional geometry is parameter- and seed-dependent, even when
+disease-group silhouette remains positive.
+
+A direct analysis with `pca=FALSE` was also computationally feasible and completed
+from the full 771,381-probe matrix in approximately
+`r sprintf('%.2f',tab('results/tables/tsne_direct_pca_false_runtime.tsv')$elapsed_minutes)` minutes.
+
+```{r, out.width='100%', fig.show='asis'}
+knitr::include_graphics(c(file.path(root,"figures/web/Figure_tSNE_stability.png"),
+  file.path(root,"figures/web/Figure_tSNE_direct_pca_false.png")))
+```
+
+```{r, out.width='100%'}
+knitr::include_graphics(file.path(root,"figures/web/Figure_sample_correlation_heatmap.png"))
+```
+
+The sample-correlation heatmap was clustered using `1 - Pearson correlation` from
+the full M-value matrix without labels; diagnostic and metadata variables were added
+only after clustering.
+
+# Clinically relevant subsets and sample influence
+
+PCA and t-SNE were recomputed independently after excluding MMC, excluding controls,
+restricting to the institutional archive, comparing IBM with non-IBM IIM, NOS, and
+comparing ALS with non-ALS NMA. These analyses are not obtained by deleting points
+from the full-cohort embedding.
+
+```{r}
+knitr::kable(subset_summary,digits=3)
+```
+
+The ALS versus non-ALS NMA analysis remains exploratory because only six ALS cases
+are available and the result is sensitive to individual samples and biopsy-site
+adjustment.
+
+# Differential methylation sensitivity
+
+```{r}
+knitr::kable(design_audit)
+```
+
+Age/sex and biopsy-site sensitivity models were estimable. Models containing source
+or Sentrix together with disease group were rank deficient, reflecting structural
+confounding that cannot be resolved statistically in this cohort.
+
+```{r, out.width='100%'}
+knitr::include_graphics(file.path(root,"figures/web/Figure_differential_sensitivity.png"))
+```
+
+```{r}
+knitr::kable(dm_sens[dm_sens$model!='unadjusted',],digits=3)
+```
+
+The number and ranking of differential CpGs changed materially after adjustment.
+In particular, ALS versus NMA yielded two CpGs at FDR < 0.001 in the unadjusted
+model, three after age/sex adjustment, and none after biopsy-site adjustment.
+Accordingly, ALS–NMA findings should be described as preliminary and
+hypothesis-generating.
+
+# Supervised-learning interpretation and confounder audit
+
+The final patient-aware held-out analysis kept both samples from the repeated patient
+in one partition and used 44 training samples from 43 patients and 29 held-out samples
+from 29 patients. Logistic regression achieved
+`r sprintf('%.1f%%',100*patient_ml$accuracy[patient_ml$model=='Logistic regression'])`
+accuracy. This single internal split does not constitute external validation. Metadata alone predicted disease group
+substantially above the six-class chance level, demonstrating that classifier
+performance cannot automatically be attributed to disease-intrinsic methylation.
+
+```{r, out.width='100%'}
+knitr::include_graphics(file.path(root,"figures/web/Figure_metadata_only_classifier.png"))
+```
+
+The mean repeated-CV balanced accuracy using all available defined metadata was
+`r sprintf('%.3f',mean(metadata_ml$balanced_accuracy[metadata_ml$feature_set=='all_available_metadata']))`;
+Sentrix alone achieved `r sprintf('%.3f',mean(metadata_ml$balanced_accuracy[metadata_ml$feature_set=='sentrix_only']))`.
+Because some groups are tied to distinct source/chip structures, a clean leave-one-source
+or leave-one-Sentrix validation is not feasible for all six classes.
+
+Only one patient had repeated samples, so a common within-patient correlation was not
+estimable (`r patient_block$note`). Differential-analysis sensitivity was therefore
+assessed by alternately excluding each of the paired samples.
+
+# Interpretation for the manuscript
+
+The defensible conclusion is that bulk-muscle methylation contains strong structure
+associated with the studied disease groups, while technical, demographic, biopsy-site,
+and tissue-composition differences plausibly contribute. The present data do not
+support a standalone clinical diagnostic classifier or a fully disease-entity-specific
+methylation signature. Results should be framed as a pilot, hypothesis-generating
+study requiring balanced, prospectively collected, independent validation cohorts.
+
+# Reproducibility
+
+The workflow is managed by the repository-level Pixi lockfile. Machine-readable
+coordinates, association statistics, sensitivity summaries, design audits, and
+figure-source tables accompany the publication-ready PDF and TIFF figures.
+
+```{r}
+cat(R.version.string, "\n")
+cat("Environment resolved by the repository pixi.lock file.\n")
+```

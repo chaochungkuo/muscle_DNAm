@@ -1,40 +1,73 @@
 # muscle_DNAm
 
-Analysis scripts for the manuscript:
-> Entity-specific DNA methylation patterns in non-neoplastic skeletal muscle pathology
+Reproducible analysis code for a pilot study of disease-group-associated DNA methylation patterns in non-neoplastic skeletal muscle pathology.
 
-## Overview
-This repository contains only analysis notebooks/scripts and reproducibility files. It excludes raw data and generated outputs (figures, tables, reports).
+This repository contains code, dependency locks, small metadata schemas, and reproducibility manifests. Raw IDAT files, full methylation matrices, fitted models, private metadata, and generated reports are not stored in Git.
 
-## Methods summary
+## Current development
 
-### Data processing and statistics
+The `reviewer-round-2-rebuild` branch rebuilds the analysis as one confounder-aware workflow. It preserves the submitted scripts while the new workflow is validated.
 
-Array data analysis was performed using R v.4.3.3, using a number of packages from Bioconductor and other repositories. Raw signal intensities were obtained from IDAT files using the minfi R package (Aryee et al 2014). Each sample was individually normalised by performing background correction for both colour channels. Subsequently, several filtering criteria were applied to the initial CpG sites (865859): removal of probes targeting X and Y chromosomes (18507), removal of probes containing single nucleotide polymorphism within five base pairs spanning and within the targeted CpG site (46224), and probes with bad quality (23956). Normalization was performed using the preprocessQuantile function in minfi (Touleimat & Tost 2012). The M values of the filtered probes were used for principal component analysis (PCA) and t-SNE clustering (Rtsne package v.0.17). Differential methylation analysis was conducted using the limma R package (Ritchie et al 2015) on the M values of all CpG sites with the annotation on human genome hg19. The adjusted p-values were corrected using the Benjamini-Hochberg procedure to calculate the False Discovery Rate (FDR). Gene Set Enrichment Analysis (GSEA) was performed using the clusterProfiler R package (Yu et al 2012). Customized heatmaps were generated using the pheatmap R package (Kolde 2018).
+The revised analytical order is:
 
-### Supervised Learning for Predicting Diagnosis
+1. sample and metadata validation
+2. methylation-array QC and preprocessing
+3. unsupervised PCA/t-SNE reproduction and bias checks
+4. differential methylation with sensitivity analyses
+5. functional and gene-focused analyses
+6. supervised learning with leakage-safe, confounder-aware validation
+7. manuscript figures and tables
 
-The normalized M values were loaded for supervised diagnosis prediction using a leakage-safe workflow. The dataset was first split into stratified training and held-out test sets. Low-variance filtering, univariate feature selection, mutual-information feature selection, scaling, and recursive feature elimination were then fitted on the training set only. The held-out test set and unknown application samples were transformed with the fitted feature-selection artifacts, without using their labels to select CpG sites. K-fold cross-validation (k=5) was used for hyperparameter tuning within the training set. Supervised learning algorithms, including logistic regression, decision trees, random forests, and support vector machines (SVM), were implemented using the scikit-learn Python package (Pedregosa et al 2011). Exploratory full-dataset feature-selection visualizations are kept separate from the benchmarking workflow.
+## Environment
 
-## Repo layout
-- `analysis/01_qc` QC notebook
-- `analysis/02_processing` preprocessing and normalization
-- `analysis/03_differential` differential methylation analysis
-- `analysis/04_functional` functional analysis and GO heatmap
-- `analysis/05_visualization` visualization steps
-- `analysis/06_gene_quantification` gene quantification
-- `analysis/07_ml` leakage-safe supervised learning notebooks (Python)
-- `scripts/` helper scripts
-- `data/` placeholder for raw data (not included)
-- `metadata/` placeholder for sample metadata (if shareable)
-- `output/` generated outputs (not tracked)
+[Pixi](https://pixi.sh/) manages both R and Python dependencies from the repository root.
 
-## Reproducibility
-- R: `renv.lock` (repo root)
-- Python: `analysis/07_ml/conda_environment.yml`, `analysis/07_ml/pixi.toml`, or `analysis/07_ml/requirements.txt`
+```bash
+pixi install
+pixi run setup-bioc-data
+pixi run check
+```
 
-## Notes
-- Raw data and generated results are intentionally excluded.
-- Add small, shareable metadata tables under `metadata/` if permitted.
-- Place IDAT files under `data/idats` and the sample sheet at `metadata/samplesheet.csv`.
-- Outputs are written to `output/`, including `output/processed_mVals.csv` used by the ML notebooks.
+The exact resolved environment is recorded in `pixi.lock`. The explicit
+`setup-bioc-data` step is needed because Pixi does not execute the post-link
+downloaders used by Bioconda annotation packages. Do not maintain separate
+Conda, pip, renv, or nested Pixi specifications for the rebuilt workflow.
+
+## Data configuration
+
+Copy the example configuration without committing the local copy:
+
+```bash
+cp config/paths.example.yml config/paths.local.yml
+```
+
+Edit `config/paths.local.yml` to point to data outside the repository. Analysis code must not contain machine-specific absolute paths.
+
+Expected external inputs include IDAT files, a private sample sheet, Juliane's reviewer-round bias metadata, external MMC data, and post-QC matrices when starting downstream of preprocessing. See `data/README.md` and `metadata/README.md`.
+
+## Repository layout
+
+- `analysis/`: narrative Quarto/R/Python analyses
+- `R/`: reusable R functions
+- `python/`: reusable Python modules
+- `scripts/`: command-line entry points and validation tools
+- `config/`: portable analysis and path configuration
+- `metadata/`: public schemas/examples only; `metadata/private/` is ignored
+- `data/`: placeholders only; raw and derived data are ignored
+- `results/`, `figures/`, `reports/`: generated, untracked outputs
+- `tests/`: lightweight reproducibility tests
+
+## Reproducibility policy
+
+- All sample joins use explicit identifiers, never row order alone.
+- Every figure has a machine-readable source table or coordinate file.
+- Seeds and analysis parameters live in `config/analysis.yml`.
+- PCA/t-SNE baseline reproduction is separate from sensitivity analyses.
+- Label-informed heatmaps are described as supervised descriptive analyses.
+- Undefined clinical/pathology categories are displayed only as supplied and are not interpreted or modeled without provenance.
+- Unavailable variables are never inferred or imputed to satisfy a reviewer request.
+- Manuscript terminology uses `disease group`; legacy `PM` is mapped to `non-IBM IIM, NOS` only for presentation.
+
+## Legacy scripts
+
+The existing numbered subdirectories under `analysis/` are the previous workflow. They remain until the rebuilt pipeline reproduces the relevant results. Archival or removal will occur later in a separate, reviewable commit.

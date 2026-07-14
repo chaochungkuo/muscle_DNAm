@@ -1,0 +1,39 @@
+project:
+  sample_count: 73
+  patient_count: 72
+  post_qc_probe_count: 771381
+
+labels:
+  internal_non_ibm_iim: PM
+  display_non_ibm_iim: non-IBM IIM, NOS
+
+pca:
+  primary_center: true
+  primary_scale: true
+  sensitivity_scale: false
+  report_components: 20
+
+tsne:
+  baseline:
+    perplexity: 15
+    theta: 0.5
+    dims: 2
+    pca: true
+    initial_dims: 50
+    seed: 42
+  sensitivity:
+    initial_dims: [10, 20, 30, 50, 72]
+    perplexities: [5, 10, 15, 20]
+    seeds: [1, 11, 21, 31, 41, 42, 51, 61, 71, 81]
+    test_pca_false: true
+
+metadata_policy:
+  authoritative_source: juliane_bias_check_excel
+  undefined_descriptive_variables: [lymphomonocytes]
+  unavailable_variables:
+    - macrophage_fraction
+    - fiber_type_estimate
+    - denervation_score
+    - fibrosis_score
+    - necrosis_score
+    - pathology_severity

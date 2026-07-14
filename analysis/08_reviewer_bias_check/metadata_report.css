@@ -1,0 +1,64 @@
+body {
+  font-size: 16px;
+  line-height: 1.55;
+}
+
+main.content {
+  max-width: 1200px;
+}
+
+.table-scroll {
+  display: block;
+  width: 100%;
+  overflow-x: auto;
+  margin-bottom: 1.5rem;
+}
+
+table {
+  width: 100%;
+  max-width: 100%;
+  font-size: 0.9rem;
+}
+
+th, td {
+  padding: 0.35rem 0.55rem;
+  vertical-align: top;
+}
+
+.sentrix-table-wrap {
+  overflow-x: visible;
+}
+
+table.sentrix-matrix {
+  width: auto;
+  max-width: 100%;
+  table-layout: auto;
+  font-size: 0.82rem;
+}
+
+table.sentrix-matrix th,
+table.sentrix-matrix td {
+  padding: 0.3rem 0.45rem;
+  white-space: normal;
+  text-align: center !important;
+}
+
+table.sentrix-matrix th:first-child,
+table.sentrix-matrix td:first-child {
+  min-width: 8.5rem;
+  white-space: nowrap;
+  text-align: left !important;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+    "Liberation Mono", "Courier New", monospace;
+}
+
+table.sentrix-matrix th:last-child,
+table.sentrix-matrix td:last-child {
+  font-weight: 700;
+}
+
+@media (max-width: 900px) {
+  .sentrix-table-wrap {
+    overflow-x: auto;
+  }
+}

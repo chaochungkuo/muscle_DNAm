@@ -1,0 +1,92 @@
+---
+title: "Metadata audit for reviewer-requested bias checks"
+author: "Chao-Chung Kuo"
+format:
+  html:
+    toc: true
+    code-fold: true
+    embed-resources: true
+    theme: cosmo
+    css: metadata_report.css
+    page-layout: full
+    smooth-scroll: true
+execute:
+  echo: true
+  warning: false
+  message: false
+---
+
+This report validates the mapping between Juliane's anonymized reviewer-round
+metadata and the 73 samples in the post-QC methylation matrix. The supplied Excel
+table is treated as authoritative for this analysis.
+
+The `lymphomonocytes` field is reproduced exactly as supplied. Its scoring method
+and biological meaning are unknown to the analyst; it is therefore not interpreted
+and is not used as an adjustment covariate. Requested variables absent from the
+supplied table are not inferred.
+
+```{r}
+source("../../R/config.R")
+source("../../R/metadata.R")
+cfg <- read_project_config("../..")
+load(file.path(cfg$paths$project_data_root,
+  "analysis/DNAmArray/DNAmArray_Processing.RData"))
+bias <- read_bias_metadata(cfg$paths$bias_metadata)
+key <- read_sample_key(cfg$paths$sample_sheet)
+metadata <- build_analysis_metadata(bias, key, colnames(mVals))
+validation <- validate_analysis_metadata(metadata, colnames(mVals))
+validation
+```
+
+## Metadata overview
+
+```{r}
+knitr::kable(as.data.frame(table(metadata$display_group)),
+  col.names = c("Disease group", "N"))
+```
+
+## Cross-tabulations
+
+```{r, results='asis'}
+tabs <- make_cross_tabs(metadata)
+for (nm in names(tabs)) {
+  cat("\n### Disease group by ", nm, "\n\n", sep = "")
+  if (nm == "sentrix_id") {
+    # Put the many Sentrix IDs in rows rather than columns. This preserves the
+    # complete cross-tabulation while keeping the table within the report width.
+    sentrix_counts <- as.matrix(tabs[[nm]][, -1, drop = FALSE])
+    storage.mode(sentrix_counts) <- "numeric"
+    rownames(sentrix_counts) <- tabs[[nm]]$disease_group
+    sentrix_matrix <- t(sentrix_counts)
+    sentrix_table <- data.frame(
+      `Sentrix ID` = rownames(sentrix_matrix),
+      sentrix_matrix,
+      check.names = FALSE,
+      row.names = NULL
+    )
+    sentrix_table$Total <- rowSums(sentrix_matrix)
+    cat('<div class="table-scroll sentrix-table-wrap">\n')
+    print(knitr::kable(
+      sentrix_table,
+      format = "html",
+      row.names = FALSE,
+      align = c("l", rep("c", ncol(sentrix_table) - 1)),
+      table.attr = 'class="table sentrix-matrix"'
+    ))
+    cat('\n</div>\n')
+  } else {
+    cat('<div class="table-scroll">\n')
+    print(knitr::kable(tabs[[nm]]))
+    cat('\n</div>\n')
+  }
+  cat("\n")
+}
+```
+
+## Interpretation boundary
+
+These tables describe structural overlap between disease groups and supplied
+metadata. They do not by themselves establish causality or demonstrate that a
+variable is a biological confounder. Where disease group and a metadata category
+are perfectly or nearly perfectly aligned, their effects may not be statistically
+separable in this cohort.
