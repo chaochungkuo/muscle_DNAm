@@ -258,6 +258,8 @@ INSTRUCTIONS = {
 
 
 def instruction_box(chunk: dict) -> str:
+    if chunk.get("exact_edits"):
+        return ""
     detail = INSTRUCTIONS.get(chunk["id"])
     if not detail:
         return ""
@@ -269,7 +271,7 @@ def instruction_box(chunk: dict) -> str:
         ("Status", [detail["status"]]),
     ]
     return (
-        '<div class="instruction-box"><div class="label">Detailed manuscript/rebuttal instructions</div>'
+        '<div class="instruction-box"><div class="label">Remaining decisions / implementation notes</div>'
         + "".join(
             '<div class="instruction-row">'
             f'<div class="instruction-key">{html.escape(key)}</div>'
@@ -322,6 +324,7 @@ def rebuttal_figures_box(chunk: dict) -> str:
 CHUNKS = [
     {
         "id": "overall_confounding",
+        "reviewer": "Reviewer 1",
         "title": "1. Overall concern: strong clustering may reflect confounding",
         "status": "Analysis complete; interpretation must be cautious",
         "owner": "Joseph drafted; Juliane to approve wording",
@@ -392,6 +395,7 @@ CHUNKS = [
     },
     {
         "id": "metadata_annotations",
+        "reviewer": "Reviewer 1 / Juliane action mapping",
         "title": "2. Metadata and confounder coloring requested by Juliane",
         "status": "Available metadata covered; unavailable variables require Juliane",
         "owner": "Juliane for unavailable pathology variables",
@@ -469,6 +473,7 @@ CHUNKS = [
     },
     {
         "id": "tsne_pca_sensitivity",
+        "reviewer": "Reviewer 1",
         "title": "3. t-SNE default PCA, direct pca=FALSE, and parameter sensitivity",
         "status": "Complete",
         "owner": "Joseph drafted; Juliane to approve wording",
@@ -529,6 +534,7 @@ CHUNKS = [
     },
     {
         "id": "correlation_heatmap_figure1f",
+        "reviewer": "Reviewer 1",
         "title": "4. Figure 1F and the label-free full-matrix correlation heatmap",
         "status": "Complete; final figure placement needs approval",
         "owner": "Juliane to approve Figure 1F plan",
@@ -591,6 +597,7 @@ CHUNKS = [
     },
     {
         "id": "pca_scrutiny",
+        "reviewer": "Reviewer 1",
         "title": "5. PCA scrutiny: scree, PC pairs, scaled vs unscaled PCA, and loadings",
         "status": "Complete",
         "owner": "Joseph drafted; Juliane to approve wording",
@@ -641,6 +648,7 @@ CHUNKS = [
     },
     {
         "id": "subset_influence",
+        "reviewer": "Reviewer 1",
         "title": "6. Subset and influential-sample analyses",
         "status": "Complete",
         "owner": "Joseph drafted; Juliane to approve wording",
@@ -683,6 +691,7 @@ CHUNKS = [
     },
     {
         "id": "downstream_validation",
+        "reviewer": "Reviewer 1",
         "title": "7. Downstream differential methylation and classifier confounder validation",
         "status": "Complete within estimability limits",
         "owner": "Juliane to approve limitation wording",
@@ -718,6 +727,7 @@ CHUNKS = [
     },
     {
         "id": "supervised_wording",
+        "reviewer": "Reviewer 2",
         "title": "8. Supervised learning wording: disease group, not diagnosis",
         "status": "Mostly covered; final proofreading still needed",
         "owner": "Juliane and Joseph",
@@ -750,7 +760,8 @@ CHUNKS = [
     },
     {
         "id": "inclusion_exclusion",
-        "title": "9. Reviewer 2: inclusion/exclusion criteria and archive selection",
+        "reviewer": "Reviewer 2",
+        "title": "9. Inclusion/exclusion criteria and archive selection",
         "status": "Needs Juliane clinical/pathology input",
         "owner": "Juliane / clinical pathology team",
         "quote": "The inclusion and exclusion criteria are still not sufficiently detailed... how were these specific cases selected among all others? Were all candidate cases within the 8-year period reviewed? Were slides reviewed before inclusion... Was clinical information also evaluated...",
@@ -781,7 +792,8 @@ CHUNKS = [
     },
     {
         "id": "cell_composition",
-        "title": "10. Reviewer 2: deconvolution and cell-composition limitation",
+        "reviewer": "Reviewer 2",
+        "title": "10. Deconvolution and cell-composition limitation",
         "status": "Covered by limitation route unless Juliane supplies validated covariates",
         "owner": "Juliane to confirm availability",
         "quote": "The authors either need to perform deconvolution analyses... or explicitly discuss that the absence of such analyses is a major limitation of the current study.",
@@ -812,6 +824,7 @@ CHUNKS = [
     },
     {
         "id": "als_nma",
+        "reviewer": "Reviewer 2",
         "title": "11. ALS versus non-ALS NMA: soften interpretation",
         "status": "Complete; final wording needs approval",
         "owner": "Juliane to approve clinical tone",
@@ -842,6 +855,7 @@ CHUNKS = [
     },
     {
         "id": "proofreading",
+        "reviewer": "Reviewer 2",
         "title": "12. Proofreading, placeholders, supplement numbering and author decisions",
         "status": "Partly covered; final author-level proofreading required",
         "owner": "Juliane / all authors",
@@ -1108,6 +1122,7 @@ blockquote {
 }
 .badge.status { color: var(--green); background: #fbfdfc; border-color: #cfded4; }
 .badge.owner { color: var(--yellow); background: #fffdf6; border-color: #e5d8aa; }
+.badge.reviewer { color: var(--blue); background: #f8fbff; border-color: #c7d7f3; }
 .box {
   border-radius: 8px;
   border: 1px solid var(--line);
@@ -1424,6 +1439,7 @@ def render_chunk(chunk: dict) -> str:
         f'<section class="card chunk" id="{chunk["id"]}">',
         f"<h2>{html.escape(chunk['title'])}</h2>",
         '<div class="meta">',
+        f'<span class="badge reviewer">{html.escape(chunk["reviewer"])}</span>',
         f'<span class="badge status">Status: {html.escape(chunk["status"])}</span>',
         f'<span class="badge owner">Owner: {html.escape(chunk["owner"])}</span>',
         "</div>",
@@ -1462,9 +1478,12 @@ def render_chunk(chunk: dict) -> str:
 
 
 def build() -> str:
-    toc = "".join(f'<a href="#{c["id"]}">{html.escape(c["title"])}</a>' for c in CHUNKS)
+    toc = "".join(
+        f'<a href="#{c["id"]}">{html.escape(c["reviewer"])} — {html.escape(c["title"])}</a>'
+        for c in CHUNKS
+    )
     side_toc = "".join(
-        f'<a href="#{c["id"]}" data-target="{c["id"]}">{html.escape(c["title"])}</a>'
+        f'<a href="#{c["id"]}" data-target="{c["id"]}">{html.escape(c["reviewer"])} — {html.escape(c["title"])}</a>'
         for c in CHUNKS
     )
     chunks = "\n".join(render_chunk(c) for c in CHUNKS)
@@ -1483,7 +1502,7 @@ def build() -> str:
 <body>
 <header>
   <h1>Reviewer response workbook</h1>
-  <p>Interactive working report for Juliane and Joseph. The structure follows Juliane's 2026-07-08 email and breaks reviewer comments into one-topic chunks with evidence, interpretation, draft rebuttal text and note boxes.</p>
+  <p>Interactive working report for Juliane and Joseph. The structure follows Juliane's 2026-07-08 email and labels each topic by reviewer source, with evidence, interpretation, draft rebuttal text, figure-insertion guidance, exact manuscript edits where available and note boxes.</p>
 </header>
 <div class="toolbar">
   <div class="toolbar-inner">
