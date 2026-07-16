@@ -36,6 +36,10 @@ def quote(text: str) -> str:
     return f"<blockquote>{html.escape(text)}</blockquote>"
 
 
+def paragraph_list(items: list[str]) -> str:
+    return "".join(f"<p>{html.escape(item)}</p>" for item in items)
+
+
 def main_fig(name: str, caption: str) -> str:
     return (
         '<figure class="figure">'
@@ -107,6 +111,165 @@ def supplementary_figures(names: list[str]) -> str:
             "</figure>"
         )
     return '<div class="figure-grid">' + "".join(cards) + "</div>"
+
+
+INSTRUCTIONS = {
+    "overall_confounding": {
+        "where": "Abstract, Results opening, Discussion, conclusion, and rebuttal overview.",
+        "change": [
+            "Replace disease-intrinsic, disease-specific, or diagnostic-certainty wording with disease-group-associated / pilot / hypothesis-generating wording.",
+            "State that source, Sentrix, demographic variables and biopsy site align with leading structure and cannot be fully separated from disease group in this cohort.",
+        ],
+        "wording": "The revised analyses show methylation structure associated with the studied disease groups, but this structure also overlaps with dataset source, Sentrix array, demographic variables and biopsy site. We therefore interpret the findings as pilot, disease-group-associated observations rather than disease-intrinsic signatures or clinical diagnostic validation.",
+        "owner": "Joseph can implement the wording; Juliane should approve the final scientific tone.",
+        "status": "Implemented in draft at high level; final approval needed.",
+    },
+    "metadata_annotations": {
+        "where": "Methods metadata paragraph, Results confounder analysis paragraph, Supplementary figure legends, Discussion limitations.",
+        "change": [
+            "List the supplied annotation variables used for recoloring PCA/t-SNE coordinates.",
+            "State explicitly that lymphomonocytes were displayed as supplied but not interpreted biologically because the scoring definition was unavailable to the analyst.",
+            "State that macrophage, fiber-type, denervation, fibrosis, necrosis and pathology-severity scores were not available unless Juliane supplies validated measures.",
+        ],
+        "wording": "PCA and t-SNE coordinates were annotated by disease group, dataset source, Sentrix ID, age, sex, biopsy-site group, city of origin and the supplied lymphomonocyte category. The lymphomonocyte category was used only as a descriptive annotation because its scoring definition was unavailable to the analyst.",
+        "owner": "Joseph for analysis wording; Juliane for the lymphomonocyte definition and unavailable pathology variables.",
+        "status": "Analysis implemented; clinical/pathology definitions remain owner-dependent.",
+    },
+    "tsne_pca_sensitivity": {
+        "where": "Methods, Results t-SNE sensitivity paragraph, Supplementary figure legend, rebuttal response.",
+        "change": [
+            "Correct the t-SNE method to state that Rtsne used pca=TRUE and initial_dims=50 by default.",
+            "Add direct pca=FALSE analysis and the initial_dims/perplexity/seed sensitivity grid.",
+            "Avoid interpreting exact t-SNE distances or cluster geometry as stable global distances.",
+        ],
+        "wording": "The baseline t-SNE was computed with Rtsne using pca=TRUE and initial_dims=50; therefore, the full post-QC M-value matrix was first internally reduced to 50 centered, unscaled principal components before generating the two-dimensional embedding. We additionally performed direct pca=FALSE and parameter/seed sensitivity analyses.",
+        "owner": "Joseph.",
+        "status": "Implemented in draft; wording can be tightened for journal style.",
+    },
+    "correlation_heatmap_figure1f": {
+        "where": "Figure 1 panel plan, Results first methylation-structure paragraph, Figure 1 legend, supplement.",
+        "change": [
+            "Replace Figure 1F with the label-free full-matrix sample-correlation heatmap, or add it as the main unsupervised heatmap.",
+            "Move the previous top-CpG heatmap to the supplement or label it clearly as supervised descriptive visualization.",
+            "State that clustering order was determined without disease labels.",
+        ],
+        "wording": "Figure 1F now shows a label-free sample-to-sample Pearson correlation heatmap calculated from the complete post-QC M-value matrix. Samples were hierarchically clustered using 1 minus Pearson correlation and complete linkage; disease group and metadata variables were added only as annotations after clustering.",
+        "owner": "Juliane to approve final figure placement; Joseph can update figure legend and rebuttal.",
+        "status": "Analysis complete; final figure allocation needs approval.",
+    },
+    "pca_scrutiny": {
+        "where": "Methods PCA paragraph, Results PCA sensitivity paragraph, Supplementary figures/tables, rebuttal.",
+        "change": [
+            "Add scree/cumulative variance and PC1-PC2, PC1-PC3, PC2-PC3 projections.",
+            "Describe scaled PCA as the submitted baseline and centered-unscaled PCA as sensitivity.",
+            "Report quantitative PC-metadata associations and top-loading annotation without claiming disease-only axes.",
+        ],
+        "wording": "We expanded the PCA analysis by adding PC1-PC20 variance summaries, multiple pairwise projections, centered-scaled and centered-unscaled analyses, quantitative PC-metadata associations and annotation of leading loadings. These analyses show robust structure but also overlap with technical and cohort variables.",
+        "owner": "Joseph.",
+        "status": "Implemented analytically; final figure numbering and supplement references need proofreading.",
+    },
+    "subset_influence": {
+        "where": "Results sensitivity paragraph, Supplementary figures, Discussion limitations, rebuttal.",
+        "change": [
+            "State that PCA and t-SNE were recomputed within each requested subset, not merely subsetted from the full embedding.",
+            "Report that institutional-only and disease-pair analyses are weaker than the full mixed-source cohort.",
+            "Use the influence analysis to justify cautious wording for small disease-pair contrasts.",
+        ],
+        "wording": "PCA and t-SNE were recomputed independently after excluding MMC, excluding controls, restricting to institutional archive samples, comparing IBM with non-IBM IIM, NOS, and comparing ALS with non-ALS NMA. The subset analyses, especially ALS versus non-ALS NMA, support exploratory rather than definitive interpretation.",
+        "owner": "Joseph.",
+        "status": "Implemented analytically; wording needs final integration.",
+    },
+    "downstream_validation": {
+        "where": "Methods differential analysis/classifier paragraphs, Results downstream sensitivity paragraph, Discussion limitations, rebuttal.",
+        "change": [
+            "State which covariate models were estimable and which were rank deficient.",
+            "Add metadata-only classifier as a confounding diagnostic, not as a biological classifier.",
+            "Keep supervised learning language internal to the studied groups.",
+        ],
+        "wording": "Age/sex and biopsy-site adjusted models were fitted where estimable, whereas source and Sentrix could not be separated from disease group in full-rank models because of structural alignment. Metadata-only classification further indicated that classifier performance cannot be interpreted as disease-intrinsic or clinically validated.",
+        "owner": "Joseph; Juliane to approve limitation strength.",
+        "status": "Implemented analytically; final limitation wording needs approval.",
+    },
+    "supervised_wording": {
+        "where": "Abstract, supervised learning Methods/Results, Figure 6 legend, Discussion, rebuttal.",
+        "change": [
+            "Replace correct diagnosis / predicted diagnosis with classified disease group or classified the studied groups.",
+            "Clarify that non-ALS NMA and non-IBM IIM, NOS are study groups, not complete clinical diagnoses.",
+            "State that the model is not an externally validated clinical diagnostic classifier.",
+        ],
+        "wording": "The supervised analysis is presented as exploratory classification among the studied disease groups. It does not establish a clinically validated diagnostic classifier and does not cover the complete clinical differential diagnosis.",
+        "owner": "Joseph for wording; Juliane for final clinical terminology.",
+        "status": "Mostly implemented; final full-manuscript proofreading required.",
+    },
+    "inclusion_exclusion": {
+        "where": "Methods, Human samples section; rebuttal to Reviewer 2 comment 1.",
+        "change": [
+            "Add archive candidate totals by group, exclusion counts and exclusion reasons.",
+            "State whether all candidate cases in the eight-year interval were reviewed.",
+            "Describe slide review, clinical-information review, diagnosing pathologists and adjudication process.",
+        ],
+        "wording": "[Juliane to insert exact factual wording: total archive candidates, cases reviewed, slide/clinical re-review process, adjudication, exclusion counts and exclusion reasons.]",
+        "owner": "Juliane / clinical pathology team.",
+        "status": "Blocked until clinical/pathology facts are supplied.",
+    },
+    "cell_composition": {
+        "where": "Methods if covariates exist; otherwise Discussion limitations and rebuttal to Reviewer 2 comment 2.",
+        "change": [
+            "If validated deconvolution or pathology scores exist, provide them and rerun relevant models.",
+            "If not, explicitly state that cell-composition-adjusted analyses were unavailable and this is a major limitation.",
+            "Do not use undefined lymphomonocyte categories as a substitute for validated deconvolution.",
+        ],
+        "wording": "Validated sample-level deconvolution estimates or histopathology scores suitable for covariate adjustment were not available for the present analysis. The absence of cell-composition-adjusted differential methylation models is therefore a major limitation.",
+        "owner": "Juliane to confirm availability; Joseph to rerun if valid covariates are supplied.",
+        "status": "Limitation route drafted; can change only if new validated covariates are supplied.",
+    },
+    "als_nma": {
+        "where": "ALS/NMA Results, gene-set interpretation, Discussion, rebuttal to Reviewer 2 comment 3.",
+        "change": [
+            "Keep the comparison but label it exploratory and hypothesis-generating.",
+            "Mention small ALS sample size, overlap, individual-sample influence and biopsy-site sensitivity.",
+            "Avoid language implying a validated ALS methylation signature.",
+        ],
+        "wording": "The ALS versus non-ALS NMA comparison is retained as exploratory and hypothesis-generating. The small ALS sample size, overlap in unsupervised analyses, individual-sample influence and loss of FDR-significant CpGs after biopsy-site adjustment preclude strong interpretation.",
+        "owner": "Joseph for draft; Juliane to approve clinical tone.",
+        "status": "Implemented conceptually; final wording needs approval.",
+    },
+    "proofreading": {
+        "where": "Entire manuscript, supplement references, author list, title page, final rebuttal.",
+        "change": [
+            "Run a final terminology pass after Juliane inserts clinical text.",
+            "Check supplement numbering and remove remaining placeholders.",
+            "Confirm author order, Tayfun Palaz placeholder and co-last/equal-contribution wording.",
+        ],
+        "wording": "The manuscript has been revised for diagnostic overstatement and placeholder supplement references; final author-level proofreading and remaining placeholder resolution will be completed before resubmission.",
+        "owner": "Juliane / all authors.",
+        "status": "Not submission-ready until clinical text and author decisions are finalized.",
+    },
+}
+
+
+def instruction_box(chunk: dict) -> str:
+    detail = INSTRUCTIONS.get(chunk["id"])
+    if not detail:
+        return ""
+    rows = [
+        ("Where to edit", [detail["where"]]),
+        ("What to change", detail["change"]),
+        ("Suggested wording", [detail["wording"]]),
+        ("Owner", [detail["owner"]]),
+        ("Status", [detail["status"]]),
+    ]
+    return (
+        '<div class="instruction-box"><div class="label">Detailed manuscript/rebuttal instructions</div>'
+        + "".join(
+            '<div class="instruction-row">'
+            f'<div class="instruction-key">{html.escape(key)}</div>'
+            f'<div class="instruction-value">{paragraph_list(value)}</div>'
+            "</div>"
+            for key, value in rows
+        )
+        + "</div>"
+    )
 
 
 CHUNKS = [
@@ -714,23 +877,53 @@ blockquote {
   border: 1px solid var(--line);
   background: #f8fafc;
 }
-.badge.status { color: var(--green); background: var(--green-soft); border-color: #bbebc9; }
-.badge.owner { color: var(--yellow); background: var(--yellow-soft); border-color: #f1d98d; }
+.badge.status { color: var(--green); background: #fbfdfc; border-color: #cfded4; }
+.badge.owner { color: var(--yellow); background: #fffdf6; border-color: #e5d8aa; }
 .box {
   border-radius: 8px;
   border: 1px solid var(--line);
+  border-left-width: 4px;
   padding: 14px;
   margin: 12px 0;
+  background: white;
 }
-.box.asking { background: var(--blue-soft); border-color: #c9dafd; }
-.box.decision { background: var(--purple-soft); border-color: #d8c5ff; }
-.box.interpretation { background: var(--green-soft); border-color: #bfe7cb; }
-.box.draft { background: #fbfbfc; border-color: #cfd6df; }
-.box.need { background: var(--yellow-soft); border-color: #efcf77; }
+.box.asking { border-left-color: #8ba7da; }
+.box.decision { border-left-color: #a998d5; }
+.box.interpretation { border-left-color: #95c5a2; }
+.box.draft { border-left-color: #aeb8c8; }
+.box.need { border-left-color: #d4ad45; background: #fffdf7; }
 .label {
   font-weight: 800;
   margin-bottom: 6px;
 }
+.instruction-box {
+  border: 1px solid var(--line);
+  border-left: 4px solid #334155;
+  border-radius: 8px;
+  margin: 14px 0;
+  background: white;
+}
+.instruction-box .label {
+  padding: 13px 14px 8px;
+  border-bottom: 1px solid var(--line);
+}
+.instruction-row {
+  display: grid;
+  grid-template-columns: 170px minmax(0, 1fr);
+  gap: 14px;
+  padding: 11px 14px;
+  border-bottom: 1px solid #eef1f5;
+}
+.instruction-row:last-child { border-bottom: 0; }
+.instruction-key {
+  color: #475569;
+  font-size: 13px;
+  font-weight: 800;
+}
+.instruction-value p {
+  margin: 0 0 7px;
+}
+.instruction-value p:last-child { margin-bottom: 0; }
 .figure {
   margin: 14px 0;
   border: 1px solid var(--line);
@@ -802,8 +995,9 @@ textarea {
 }
 .toc a:hover { text-decoration: underline; }
 .warning {
-  background: var(--red-soft);
+  background: #fffafa;
   border: 1px solid #f4b4b4;
+  border-left: 4px solid var(--red);
   color: var(--red);
   border-radius: 8px;
   padding: 12px;
@@ -837,6 +1031,7 @@ mark.search-hit {
     padding: 12px 16px;
   }
   .sidebar a { display: inline-block; max-width: 260px; vertical-align: top; }
+  .instruction-row { grid-template-columns: 1fr; gap: 4px; }
   main { padding: 16px; }
 }
 """
@@ -1006,8 +1201,7 @@ def render_chunk(chunk: dict) -> str:
         '<div class="box draft"><div class="label">Draft rebuttal response</div>',
         p(chunk["draft"]),
         "</div>",
-        "<h3>Manuscript action</h3>",
-        li(chunk["manuscript"]),
+        instruction_box(chunk),
         note_box(chunk),
         "</section>",
     ]
