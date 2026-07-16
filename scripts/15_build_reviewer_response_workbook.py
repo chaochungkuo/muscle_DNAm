@@ -3,7 +3,10 @@ from __future__ import annotations
 import base64
 import html
 import json
+import shutil
 from pathlib import Path
+
+from PIL import Image
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -11,6 +14,8 @@ PROJECT = ROOT.parents[1]
 PACKAGE = PROJECT / "manuscripts" / "reviewer_round_2" / "to_Juliane_2026-07-16"
 OUT = PACKAGE / "reviewer_response_workbook.html"
 WEB_FIG = ROOT / "figures" / "web"
+SUPP_FIG = ROOT / "figures" / "supplementary"
+SUPP_PREVIEW = PACKAGE / "figures_review_png" / "supplementary"
 
 
 def png_data(name: str) -> str:
@@ -40,30 +45,68 @@ def main_fig(name: str, caption: str) -> str:
     )
 
 
-def pdf_links(names: list[str]) -> str:
-    if not names:
-        return ""
-    return (
-        '<div class="pdf-grid">'
-        + "".join(
-            f'<a href="figures_review_pdf/supplementary/{html.escape(name)}" target="_blank">{html.escape(name)}</a>'
-            for name in names
-        )
-        + "</div>"
-    )
+def build_supplementary_previews() -> None:
+    if SUPP_PREVIEW.exists():
+        shutil.rmtree(SUPP_PREVIEW)
+    SUPP_PREVIEW.mkdir(parents=True)
+    for source in sorted(SUPP_FIG.glob("*.tiff")):
+        destination = SUPP_PREVIEW / f"{source.stem}.png"
+        with Image.open(source) as img:
+            img = img.convert("RGB")
+            img.thumbnail((1500, 1050), Image.Resampling.LANCZOS)
+            img.save(destination, optimize=True)
 
 
-def main_pdf_links(names: list[str]) -> str:
+def figure_remark(name: str) -> str:
+    stem = Path(name).stem
+    exact = {
+        "PCA_cumulative_variance": "Shows cumulative variance beyond the first two PCs.",
+        "PCA_scaled_PC1_PC2": "Submitted-style scaled PCA reference view.",
+        "PCA_scaled_PC1_PC3": "Checks whether structure persists when PC3 is considered.",
+        "PCA_scaled_PC2_PC3": "Checks secondary PCA structure beyond PC1.",
+        "PCA_unscaled_PC1_PC2": "Tests whether PCA structure depends on unit-variance scaling.",
+        "PCA_unscaled_PC1_PC3": "Unscaled PCA sensitivity view including PC3.",
+        "PCA_unscaled_PC2_PC3": "Unscaled PCA sensitivity view of secondary components.",
+        "influential_sample_analysis": "Leave-one-sample influence check for small-group contrasts.",
+    }
+    if stem in exact:
+        return exact[stem]
+    if stem.startswith("subset_ALS_vs_nonALS_NMA"):
+        return "ALS versus non-ALS NMA subset; weakest and most exploratory contrast."
+    if stem.startswith("subset_IBM_vs_nonIBM_IIM"):
+        return "IBM versus non-IBM IIM, NOS subset recomputed independently."
+    if stem.startswith("subset_excluding_MMC"):
+        return "Checks whether structure is driven by the MMC group."
+    if stem.startswith("subset_excluding_controls"):
+        return "Checks whether structure is driven by control samples."
+    if stem.startswith("subset_institutional_archive"):
+        return "Restricts the analysis to institutional archive samples."
+    if stem.startswith("pca_scaled_by_"):
+        variable = stem.replace("pca_scaled_by_", "").replace("_", " ")
+        return f"Scaled PCA colored by {variable}; checks alignment with PCA structure."
+    if stem.startswith("pca_unscaled_by_"):
+        variable = stem.replace("pca_unscaled_by_", "").replace("_", " ")
+        return f"Unscaled PCA colored by {variable}; checks robustness without CpG scaling."
+    if stem.startswith("tsne_baseline_by_"):
+        variable = stem.replace("tsne_baseline_by_", "").replace("_", " ")
+        return f"Baseline t-SNE colored by {variable}; checks alignment with the submitted embedding."
+    return "Supporting sensitivity figure for this reviewer-response point."
+
+
+def supplementary_figures(names: list[str]) -> str:
     if not names:
         return ""
-    return (
-        '<div class="pdf-grid">'
-        + "".join(
-            f'<a href="figures_review_pdf/main/{html.escape(name)}" target="_blank">{html.escape(name)}</a>'
-            for name in names
+    cards = []
+    for name in names:
+        stem = Path(name).stem
+        title = stem.replace("_", " ")
+        cards.append(
+            '<figure class="figure thumb">'
+            f'<img src="figures_review_png/supplementary/{html.escape(stem)}.png" alt="{html.escape(title)}">'
+            f"<figcaption><strong>{html.escape(title)}</strong><br>{html.escape(figure_remark(name))}</figcaption>"
+            "</figure>"
         )
-        + "</div>"
-    )
+    return '<div class="figure-grid">' + "".join(cards) + "</div>"
 
 
 CHUNKS = [
@@ -92,14 +135,7 @@ CHUNKS = [
         "figures": main_fig("Figure_unsupervised_PCA.png", "Baseline scaled PCA.")
         + main_fig("Figure_unsupervised_tSNE.png", "Baseline t-SNE.")
         + main_fig("Figure_PC_metadata_associations.png", "Leading PC associations with disease group and supplied metadata."),
-        "supplementary": pdf_links([
-            "pca_scaled_by_display_group.pdf",
-            "pca_scaled_by_dataset_source.pdf",
-            "pca_scaled_by_sentrix_id.pdf",
-            "tsne_baseline_by_display_group.pdf",
-            "tsne_baseline_by_dataset_source.pdf",
-            "tsne_baseline_by_sentrix_id.pdf",
-        ]),
+        "supplementary": "",
         "interpretation": [
             "The methylation matrix contains strong structure, but the leading structure is not cleanly separable from source, Sentrix, demographic variables, and biopsy site in this cohort.",
             "This supports a pilot, hypothesis-generating interpretation and argues against disease-entity-specific or clinical diagnostic wording.",
@@ -129,14 +165,20 @@ CHUNKS = [
             "Generated confounder-colored PCA/t-SNE panels for all supplied variables.",
             "Documented unavailable requested pathology variables as a limitation rather than guessing.",
         ],
-        "figures": main_fig("Figure_unsupervised_PCA.png", "PCA overview; detailed confounder views are in supplementary PDFs.")
-        + main_fig("Figure_unsupervised_tSNE.png", "t-SNE overview; detailed confounder views are in supplementary PDFs."),
-        "supplementary": pdf_links([
+        "figures": main_fig("Figure_unsupervised_PCA.png", "PCA overview; detailed confounder views are shown below.")
+        + main_fig("Figure_unsupervised_tSNE.png", "t-SNE overview; detailed confounder views are shown below."),
+        "supplementary": supplementary_figures([
+            "pca_scaled_by_display_group.pdf",
+            "pca_scaled_by_dataset_source.pdf",
+            "pca_scaled_by_sentrix_id.pdf",
             "pca_scaled_by_age_group.pdf",
             "pca_scaled_by_gender.pdf",
             "pca_scaled_by_muscle_location_group.pdf",
             "pca_scaled_by_city_of_origin.pdf",
             "pca_scaled_by_lymphomonocytes.pdf",
+            "tsne_baseline_by_display_group.pdf",
+            "tsne_baseline_by_dataset_source.pdf",
+            "tsne_baseline_by_sentrix_id.pdf",
             "tsne_baseline_by_age_group.pdf",
             "tsne_baseline_by_gender.pdf",
             "tsne_baseline_by_muscle_location_group.pdf",
@@ -205,7 +247,7 @@ CHUNKS = [
             "Added disease and confounder annotations only after clustering.",
         ],
         "figures": main_fig("Figure_sample_correlation_heatmap.png", "Label-free full-matrix Pearson sample-correlation heatmap."),
-        "supplementary": main_pdf_links(["Figure_sample_correlation_heatmap.pdf"]),
+        "supplementary": "",
         "interpretation": [
             "This directly answers the reviewer because ordering is not label-informed.",
             "The former heatmap should not be presented as independent evidence of natural clustering.",
@@ -239,7 +281,7 @@ CHUNKS = [
         ],
         "figures": main_fig("Figure_PCA_scree.png", "PCA scree and cumulative variance.")
         + main_fig("Figure_PC_metadata_associations.png", "PC-metadata association heatmap."),
-        "supplementary": pdf_links([
+        "supplementary": supplementary_figures([
             "PCA_cumulative_variance.pdf",
             "PCA_scaled_PC1_PC2.pdf",
             "PCA_scaled_PC1_PC3.pdf",
@@ -250,6 +292,11 @@ CHUNKS = [
             "pca_unscaled_by_display_group.pdf",
             "pca_unscaled_by_dataset_source.pdf",
             "pca_unscaled_by_sentrix_id.pdf",
+            "pca_unscaled_by_age_group.pdf",
+            "pca_unscaled_by_gender.pdf",
+            "pca_unscaled_by_muscle_location_group.pdf",
+            "pca_unscaled_by_city_of_origin.pdf",
+            "pca_unscaled_by_lymphomonocytes.pdf",
         ]),
         "interpretation": [
             "Scaled and unscaled PCA both show structure, so the observation is not solely a scaling artifact.",
@@ -280,7 +327,7 @@ CHUNKS = [
             "Performed leave-one-sample influence analysis for clinically focused contrasts.",
         ],
         "figures": "",
-        "supplementary": pdf_links([
+        "supplementary": supplementary_figures([
             "subset_excluding_MMC_PCA.pdf",
             "subset_excluding_MMC_tSNE.pdf",
             "subset_excluding_controls_PCA.pdf",
@@ -420,11 +467,7 @@ CHUNKS = [
             "Added manuscript wording that sample-level deconvolution estimates suitable for adjustment were unavailable.",
         ],
         "figures": "",
-        "supplementary": pdf_links([
-            "pca_scaled_by_lymphomonocytes.pdf",
-            "pca_unscaled_by_lymphomonocytes.pdf",
-            "tsne_baseline_by_lymphomonocytes.pdf",
-        ]),
+        "supplementary": "",
         "interpretation": [
             "This point should be answered transparently; overstating the lymphomonocyte variable would be risky.",
             "If Juliane has validated scores, we would need to rerun relevant models.",
@@ -456,11 +499,7 @@ CHUNKS = [
             "Ran differential sensitivity; biopsy-site adjustment removed FDR-significant CpGs for ALS-NMA.",
         ],
         "figures": main_fig("Figure_differential_sensitivity.png", "ALS-NMA differential sensitivity is included in the covariate sensitivity summary."),
-        "supplementary": pdf_links([
-            "subset_ALS_vs_nonALS_NMA_PCA.pdf",
-            "subset_ALS_vs_nonALS_NMA_tSNE.pdf",
-            "influential_sample_analysis.pdf",
-        ]),
+        "supplementary": "",
         "interpretation": [
             "ALS-NMA is the least stable clinically relevant comparison.",
             "Any biological interpretation should be framed as preliminary.",
@@ -699,10 +738,25 @@ blockquote {
   padding: 10px;
   background: white;
 }
+.figure-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
+  gap: 12px;
+  margin: 12px 0 18px;
+}
 .figure img {
   display: block;
   width: 100%;
-  max-height: 760px;
+  max-height: 620px;
+  object-fit: contain;
+}
+.figure.thumb {
+  margin: 0;
+  padding: 8px;
+}
+.figure.thumb img {
+  height: 260px;
+  max-height: 260px;
   object-fit: contain;
 }
 figcaption {
@@ -710,23 +764,6 @@ figcaption {
   font-size: 13px;
   margin-top: 8px;
 }
-.pdf-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 8px;
-  margin-top: 8px;
-}
-.pdf-grid a {
-  display: block;
-  padding: 8px 10px;
-  border: 1px solid var(--line);
-  border-radius: 6px;
-  background: white;
-  color: var(--blue);
-  text-decoration: none;
-  font-size: 13px;
-}
-.pdf-grid a:hover { text-decoration: underline; }
 details {
   border: 1px solid var(--line);
   border-radius: 8px;
@@ -959,9 +996,8 @@ def render_chunk(chunk: dict) -> str:
         parts += ["<h3>Figures / direct evidence</h3>", chunk["figures"]]
     if chunk["supplementary"]:
         parts += [
-            "<details><summary>Supplementary or source figure links</summary>",
+            "<h3>Additional figures</h3>",
             chunk["supplementary"],
-            "</details>",
         ]
     parts += [
         '<div class="box interpretation"><div class="label">Interpretation</div>',
@@ -1028,7 +1064,7 @@ def build() -> str:
     <div class="summary-grid">
       <div class="mini"><strong>Main line</strong>Juliane's email defines the required response path.</div>
       <div class="mini"><strong>Each chunk</strong>One reviewer topic, one interpretation, one draft rebuttal response.</div>
-      <div class="mini"><strong>Figures</strong>Main evidence is shown inline; dense supplementary figures are hidden in expandable sections.</div>
+      <div class="mini"><strong>Figures</strong>Main evidence is shown inline; supporting figures are shown as compact side-by-side cards with short remarks.</div>
       <div class="mini"><strong>Final goal</strong>Convert Juliane's notes into final manuscript edits and rebuttal text.</div>
     </div>
   </section>
@@ -1077,6 +1113,7 @@ def main() -> None:
     ]
     if missing:
         raise FileNotFoundError("\n".join(str(path) for path in missing))
+    build_supplementary_previews()
     OUT.write_text(build(), encoding="utf-8")
     print(OUT)
 
