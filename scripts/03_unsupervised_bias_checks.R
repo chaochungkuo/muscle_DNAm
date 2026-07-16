@@ -121,16 +121,45 @@ write.table(sample_cor,"results/tables/sample_correlations.tsv.gz",sep="\t",quot
 ann <- data.frame(Disease=metadata$display_group,Source=metadata$dataset_source,City=metadata$city_of_origin,Sentrix=factor(metadata$sentrix_id),
   Age=metadata$age_group,Sex=metadata$gender,Site=metadata$muscle_location_group,Lymphomonocytes=metadata$lymphomonocytes)
 rownames(ann)<-colnames(mVals)
-pdf("figures/main/Figure_sample_correlation_heatmap.pdf",width=12,height=11)
+ann[] <- lapply(ann, function(x) {
+  x <- as.character(x)
+  x[is.na(x) | x == ""] <- "Unknown"
+  factor(x)
+})
+annotation_colors <- lapply(ann, discrete_palette)
+annotation_colors$Disease <- disease_palette[names(disease_palette) %in% levels(ann$Disease)]
+legend_df <- do.call(rbind, lapply(names(annotation_colors), function(variable) {
+  values <- annotation_colors[[variable]]
+  data.frame(variable = variable, level = names(values), color = unname(values),
+    order = seq_along(values), stringsAsFactors = FALSE)
+}))
+p_legend <- ggplot2::ggplot(legend_df, ggplot2::aes(x = 1, y = stats::reorder(level, -order))) +
+  ggplot2::geom_tile(ggplot2::aes(fill = color), width = 0.25, height = 0.8) +
+  ggplot2::geom_text(ggplot2::aes(x = 1.18, label = level), hjust = 0, size = 3) +
+  ggplot2::scale_fill_identity() +
+  ggplot2::facet_wrap(~ variable, scales = "free_y", ncol = 4) +
+  ggplot2::coord_cartesian(xlim = c(0.85, 3.9), clip = "off") +
+  ggplot2::labs(title = "Annotation color legend for sample-correlation heatmap") +
+  ggplot2::theme_void(base_size = 10) +
+  ggplot2::theme(
+    plot.title = ggplot2::element_text(face = "bold", hjust = 0),
+    strip.text = ggplot2::element_text(face = "bold", hjust = 0),
+    panel.spacing = grid::unit(1.0, "lines"),
+    plot.margin = grid::unit(c(0.4, 1.5, 0.4, 0.4), "cm")
+  )
+save_publish_figure(p_legend, "figures/main/Figure_sample_correlation_annotation_legend", 12, 8)
+pdf("figures/main/Figure_sample_correlation_heatmap.pdf",width=15,height=11)
 hp<-pheatmap::pheatmap(sample_cor,clustering_distance_rows=as.dist(1-sample_cor),
   clustering_distance_cols=as.dist(1-sample_cor),clustering_method="complete",annotation_col=ann,
-  annotation_row=ann,show_rownames=FALSE,show_colnames=FALSE,border_color=NA,
+  annotation_row=ann,annotation_colors=annotation_colors,annotation_legend=TRUE,
+  show_rownames=FALSE,show_colnames=FALSE,border_color=NA,
   main="Unsupervised sample-to-sample correlation")
 dev.off()
-tiff("figures/main/Figure_sample_correlation_heatmap.tiff",width=12,height=11,units="in",res=600,compression="lzw")
+tiff("figures/main/Figure_sample_correlation_heatmap.tiff",width=15,height=11,units="in",res=600,compression="lzw")
 pheatmap::pheatmap(sample_cor,clustering_distance_rows=as.dist(1-sample_cor),
   clustering_distance_cols=as.dist(1-sample_cor),clustering_method="complete",annotation_col=ann,
-  annotation_row=ann,show_rownames=FALSE,show_colnames=FALSE,border_color=NA,
+  annotation_row=ann,annotation_colors=annotation_colors,annotation_legend=TRUE,
+  show_rownames=FALSE,show_colnames=FALSE,border_color=NA,
   main="Unsupervised sample-to-sample correlation")
 dev.off()
 write.table(data.frame(order=seq_along(hp$tree_col$order),sample_id=colnames(mVals)[hp$tree_col$order]),

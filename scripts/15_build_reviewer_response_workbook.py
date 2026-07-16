@@ -113,6 +113,15 @@ def supplementary_figures(names: list[str]) -> str:
     return '<div class="figure-grid">' + "".join(cards) + "</div>"
 
 
+def table_block(headers: list[str], rows: list[list[str]]) -> str:
+    head = "".join(f"<th>{html.escape(h)}</th>" for h in headers)
+    body = "".join(
+        "<tr>" + "".join(f"<td>{html.escape(cell)}</td>" for cell in row) + "</tr>"
+        for row in rows
+    )
+    return f'<div class="table-wrap"><table><thead><tr>{head}</tr></thead><tbody>{body}</tbody></table></div>'
+
+
 INSTRUCTIONS = {
     "overall_confounding": {
         "where": "Abstract, Results opening, Discussion, conclusion, and rebuttal overview.",
@@ -272,6 +281,44 @@ def instruction_box(chunk: dict) -> str:
     )
 
 
+def manuscript_edits_box(chunk: dict) -> str:
+    edits = chunk.get("exact_edits")
+    if not edits:
+        return ""
+    note = (
+        "<p>DOCX files do not preserve stable line numbers in a machine-readable way. "
+        "The locations below use the current clean revision draft page/paragraph locator plus exact searchable text; "
+        "final page/line numbers should be confirmed in Word after Juliane accepts the final tracked manuscript layout.</p>"
+    )
+    rows = [
+        [
+            edit["location"],
+            edit["find"],
+            edit["action"],
+            edit["replacement"],
+        ]
+        for edit in edits
+    ]
+    return (
+        '<div class="box edit-box"><div class="label">Exact manuscript edits to make</div>'
+        + note
+        + table_block(["Location", "Find this text", "Action", "Proposed exact text"], rows)
+        + "</div>"
+    )
+
+
+def rebuttal_figures_box(chunk: dict) -> str:
+    figures = chunk.get("rebuttal_figures")
+    if not figures:
+        return ""
+    rows = [[f["where"], f["figure"], f["reason"], f["caption"]] for f in figures]
+    return (
+        '<div class="box figure-insert"><div class="label">Figures to insert in rebuttal / supplement</div>'
+        + table_block(["Where to insert", "Figure file", "Why it belongs here", "Suggested caption text"], rows)
+        + "</div>"
+    )
+
+
 CHUNKS = [
     {
         "id": "overall_confounding",
@@ -304,6 +351,40 @@ CHUNKS = [
             "This supports a pilot, hypothesis-generating interpretation and argues against disease-entity-specific or clinical diagnostic wording.",
         ],
         "draft": "We agree that the strong separation in the unsupervised plots required additional scrutiny. We therefore reanalyzed the cohort using the revised metadata table, annotated PCA and t-SNE coordinates by disease group and available confounders, and quantified associations between leading PCs and metadata variables. These analyses show disease-group-associated structure, but also substantial alignment with dataset source, Sentrix array, demographic variables and biopsy site. We therefore revised the manuscript to avoid disease-intrinsic or clinical-diagnostic claims and now present the findings as pilot, group-associated observations requiring validation in larger balanced cohorts.",
+        "exact_edits": [
+            {
+                "location": "Current clean draft: page 1, paragraph 2; submitted manuscript: page 1, title paragraph",
+                "find": "Disease group-specific DNA methylation patterns",
+                "action": "Replace title to avoid disease-specific/intrinsic claim.",
+                "replacement": "Disease group-associated DNA methylation patterns in non-neoplastic skeletal muscle pathology",
+            },
+            {
+                "location": "Current clean draft: page 4, paragraph 42; abstract/concluding abstract paragraph",
+                "find": "T-SNE analysis and hierarchical clustering revealed alignment with distinct muscle disease groups. Based on the CpG site methylation data, supervised learning...",
+                "action": "Replace the abstract result/conclusion with the cautious version below.",
+                "replacement": "Unsupervised PCA, t-SNE and sample-correlation analyses demonstrated strong structure associated with the studied disease groups. However, sensitivity analyses also identified substantial associations with dataset source, Sentrix array, age, sex and biopsy site. Patient-aware supervised learning classified the studied groups with high held-out accuracy, but metadata alone also predicted group membership, indicating that the present pilot cohort cannot establish a clinically validated or disease-intrinsic classifier.",
+            },
+            {
+                "location": "Current clean draft: page 12, paragraph 75; first Results subsection on unsupervised structure",
+                "find": "Disease groups cluster together in PCA and t-SNE analysis / When performing hierarchical clustering considering only top 10 differentially methylated sites...",
+                "action": "Replace the section heading and opening interpretation.",
+                "replacement": "Disease-group-associated methylation structure is accompanied by technical and cohort structure. Unsupervised PCA and t-SNE showed strong structure associated with the studied groups, although ALS and non-ALS NMA overlapped. The exact t-SNE geometry varied across initial dimensions, perplexities and random seeds; a direct full-matrix t-SNE with pca=FALSE was feasible and provided an additional sensitivity analysis. Leading PCs were associated not only with disease group but also with dataset source, Sentrix ID and other supplied metadata.",
+            },
+            {
+                "location": "Current clean draft: page 12, paragraph 112; Discussion opening limitation paragraph",
+                "find": "In this cohort consisting of inclusion body myositis...",
+                "action": "Replace with pilot/cohort limitation wording.",
+                "replacement": "In this pilot cohort, bulk-muscle CpG methylation showed strong structure associated with inflammatory myopathy, neurogenic atrophy, multi-minicore myopathy and control groups. However, disease group, dataset source, Sentrix array, age, sex and biopsy site were imbalanced and partly aligned. Consequently, the observed patterns cannot be attributed exclusively to disease-intrinsic methylation, and their clinical diagnostic value remains undetermined.",
+            },
+        ],
+        "rebuttal_figures": [
+            {
+                "where": "Reviewer 1 overall confounding response, immediately after the first paragraph saying we reanalyzed metadata/confounders.",
+                "figure": "Figure_PC_metadata_associations.pdf",
+                "reason": "This is the strongest compact evidence that disease group is not the only variable aligned with leading PCs.",
+                "caption": "Association of leading scaled and unscaled PCs with disease group and supplied metadata, quantified by eta-squared.",
+            }
+        ],
         "manuscript": [
             "Title/abstract/results/discussion should use disease-group-associated wording.",
             "Avoid intrinsic, disease-specific entity, or diagnostic classifier claims.",
@@ -353,6 +434,34 @@ CHUNKS = [
             "The missing tissue-composition variables remain a real limitation and should be acknowledged explicitly.",
         ],
         "draft": "We displayed the PCA and t-SNE coordinates with samples colored by all available metadata fields, including dataset source, Sentrix ID, age, sex, biopsy-site group, city of origin and the supplied lymphomonocyte category. The lymphomonocyte category was treated as a descriptive annotation only because its scoring provenance was unavailable to the analyst. Validated macrophage fraction, fiber-type, denervation, fibrosis, necrosis and pathology-severity estimates were not available for covariate modeling; this is now stated as a limitation.",
+        "exact_edits": [
+            {
+                "location": "Current clean draft: page 9, paragraph 63; Methods, array data analysis",
+                "find": "The same coordinates were annotated separately by disease group, dataset source, Sentrix ID, age, sex, biopsy site, city of origin and the supplied lymphomonocyte category.",
+                "action": "Keep this sentence, but expand the following limitation sentence.",
+                "replacement": "The supplied lymphomonocyte category was displayed as a descriptive annotation only, because its scoring definition and reproducibility were unavailable to the analyst. Validated macrophage fraction, fiber-type, denervation, fibrosis, necrosis and pathology-severity estimates were not available and therefore were not inferred or used as adjustment covariates.",
+            },
+            {
+                "location": "Current clean draft: Supplementary figure legend section; add after PCA/t-SNE confounder panels",
+                "find": "No dedicated legend currently lists all confounder-colored PCA/t-SNE panels.",
+                "action": "Add a supplementary figure legend grouping the confounder-colored panels.",
+                "replacement": "Supplementary Figure X. PCA and t-SNE coordinates colored by available metadata variables. The same scaled PCA and baseline t-SNE coordinates are displayed repeatedly with colors representing disease group, dataset source, Sentrix ID, age group, sex, biopsy-site group, city of origin and the supplied lymphomonocyte category. These plots evaluate whether apparent disease-group structure overlaps with technical, demographic or biopsy variables.",
+            },
+        ],
+        "rebuttal_figures": [
+            {
+                "where": "Reviewer 1 confounder-coloring response.",
+                "figure": "Supplementary PCA/t-SNE confounder panels: pca_scaled_by_*.pdf and tsne_baseline_by_*.pdf",
+                "reason": "Juliane noted that more figures should be added in the rebuttal or supplement; these directly answer the request to color identical coordinates by each confounder.",
+                "caption": "Same PCA/t-SNE coordinates colored separately by disease group, dataset source, Sentrix ID, age group, sex, biopsy-site group, city of origin and lymphomonocytes.",
+            },
+            {
+                "where": "Reviewer 1 overall confounding response or supplement.",
+                "figure": "Figure_PC_metadata_associations.pdf",
+                "reason": "Provides quantitative support beyond visual inspection.",
+                "caption": "Eta-squared association between leading PCs and supplied metadata variables.",
+            },
+        ],
         "manuscript": [
             "Add explicit statement that unavailable tissue-composition variables were not inferred.",
             "Add major limitation wording if Juliane confirms no validated estimates are available.",
@@ -385,6 +494,34 @@ CHUNKS = [
             "The baseline figure should not be overinterpreted as a precise global geometry.",
         ],
         "draft": "We thank the reviewer for pointing out the Rtsne default. We now state explicitly that the baseline t-SNE used pca=TRUE and initial_dims=50, meaning that t-SNE was performed after Rtsne's internal centered, unscaled PCA. We performed the requested sensitivity analysis across five initial-dimensional settings, four perplexities and ten random seeds, and quantified stability using Procrustes similarity and silhouette values. We also performed a direct full-matrix analysis with pca=FALSE. These analyses support the presence of broad group-associated structure but show that the exact cluster geometry is parameter-dependent.",
+        "exact_edits": [
+            {
+                "location": "Current clean draft: page 9, paragraph 63; Methods, array data analysis",
+                "find": "Baseline t-SNE used Rtsne with perplexity 15, theta 0.5, seed 42 and its default internal centered, unscaled PCA (pca=TRUE, initial_dims=50).",
+                "action": "Keep and verify this sentence is in Methods.",
+                "replacement": "Baseline t-SNE used Rtsne with perplexity 15, theta 0.5, seed 42 and its default internal centered, unscaled PCA (pca=TRUE, initial_dims=50). Sensitivity analyses varied initial_dims (10, 20, 30, 50 and 72), perplexity (5, 10, 15 and 20), and ten random seeds; a direct full-matrix analysis with pca=FALSE was also performed.",
+            },
+            {
+                "location": "Current clean draft: page 12, paragraph 75; Results, unsupervised methylation structure",
+                "find": "The exact t-SNE geometry varied across initial dimensions, perplexities and random seeds...",
+                "action": "Keep this interpretation and avoid claiming exact t-SNE distances are stable.",
+                "replacement": "The exact t-SNE geometry varied across initial dimensions, perplexities and random seeds; a direct full-matrix t-SNE with pca=FALSE was feasible and provided an additional sensitivity analysis. Therefore, the t-SNE is interpreted as a visualization of broad neighborhood structure rather than a quantitative global distance map.",
+            },
+        ],
+        "rebuttal_figures": [
+            {
+                "where": "Reviewer 1 Rtsne default/sensitivity response, immediately after the first sentence explaining pca=TRUE and initial_dims=50.",
+                "figure": "Figure_tSNE_stability.pdf",
+                "reason": "Reviewer specifically requested systematic sensitivity and quantitative stability rather than visual inspection only.",
+                "caption": "t-SNE stability across initial dimensions, perplexities and random seeds, summarized by Procrustes similarity and disease-group silhouette.",
+            },
+            {
+                "where": "Same rebuttal subsection, after Figure_tSNE_stability.",
+                "figure": "Figure_tSNE_direct_pca_false.pdf",
+                "reason": "Reviewer specifically requested direct pca=FALSE analysis if feasible.",
+                "caption": "Direct full post-QC M-value matrix t-SNE with pca=FALSE.",
+            },
+        ],
         "manuscript": [
             "Methods: explicitly state Rtsne pca=TRUE, initial_dims=50.",
             "Results/supplement: add pca=FALSE and sensitivity summaries.",
@@ -409,16 +546,47 @@ CHUNKS = [
             "Clustered samples with 1 minus correlation and complete linkage.",
             "Added disease and confounder annotations only after clustering.",
         ],
-        "figures": main_fig("Figure_sample_correlation_heatmap.png", "Label-free full-matrix Pearson sample-correlation heatmap."),
+        "figures": main_fig("Figure_sample_correlation_heatmap.png", "Label-free full-matrix Pearson sample-correlation heatmap.")
+        + main_fig("Figure_sample_correlation_annotation_legend.png", "Annotation color legend for Figure 1F heatmap."),
         "supplementary": "",
         "interpretation": [
             "This directly answers the reviewer because ordering is not label-informed.",
             "The former heatmap should not be presented as independent evidence of natural clustering.",
+            "The heatmap needs an explicit annotation-color legend; a separate legend panel has now been generated for insertion into the figure, rebuttal or supplement.",
         ],
         "draft": "We agree that the previous top-CpG heatmap was label-informed and therefore should not be presented as independent unsupervised evidence. We replaced/supplemented this panel with a sample-to-sample Pearson correlation heatmap calculated from the complete post-QC M-value matrix. Samples were ordered by hierarchical clustering using 1 minus Pearson correlation and complete linkage; diagnostic and metadata annotations were added only after clustering. The previous top-CpG heatmap is now described only as supervised descriptive visualization.",
+        "exact_edits": [
+            {
+                "location": "Current clean draft: page 12, paragraph 76; Figure 1 legend",
+                "find": "(F) Label-free sample-to-sample Pearson-correlation heatmap calculated from the complete post-QC M-value matrix...",
+                "action": "Keep the label-free heatmap text but add explicit color-legend explanation.",
+                "replacement": "(F) Label-free sample-to-sample Pearson-correlation heatmap calculated from the complete post-QC M-value matrix and hierarchically clustered using 1 minus Pearson correlation and complete linkage. Disease group and potential confounders were added only as annotations and did not determine sample ordering. Annotation colors are defined in the adjacent legend panel / Supplementary Figure X.",
+            },
+            {
+                "location": "Figure preparation action, before resubmission",
+                "find": "Current Figure_sample_correlation_heatmap has correlation scale but no readable annotation-color legend.",
+                "action": "Use the newly generated legend panel with the heatmap.",
+                "replacement": "Combine Figure_sample_correlation_heatmap with Figure_sample_correlation_annotation_legend, or place the legend panel as a supplementary figure referenced from the Figure 1 legend.",
+            },
+        ],
+        "rebuttal_figures": [
+            {
+                "where": "Reviewer 1 Figure 1F / heatmap response, immediately after explaining the previous heatmap was label-informed.",
+                "figure": "Figure_sample_correlation_heatmap.pdf",
+                "reason": "This is the direct replacement/supplement requested by the reviewer.",
+                "caption": "Label-free sample-to-sample Pearson correlation heatmap from the full post-QC M-value matrix; clustering used 1 minus Pearson correlation and complete linkage.",
+            },
+            {
+                "where": "Immediately below the heatmap in rebuttal, or as a supplementary legend panel.",
+                "figure": "Figure_sample_correlation_annotation_legend.pdf",
+                "reason": "Juliane noted that the heatmap lacked legends for the annotation colors.",
+                "caption": "Annotation color legend for disease group, source, Sentrix ID, age group, sex, biopsy-site group, city of origin and lymphomonocyte category.",
+            },
+        ],
         "manuscript": [
             "Figure 1F: use label-free correlation heatmap.",
             "Move label-informed heatmap to supplement or relabel as supervised descriptive.",
+            "Add annotation color legend for Disease, Source, Sentrix, Age, Sex, Site, City and Lymphomonocytes.",
         ],
     },
     {
@@ -953,6 +1121,28 @@ blockquote {
 .box.interpretation { border-left-color: #95c5a2; }
 .box.draft { border-left-color: #aeb8c8; }
 .box.need { border-left-color: #d4ad45; background: #fffdf7; }
+.box.edit-box { border-left-color: #4b7bec; }
+.box.figure-insert { border-left-color: #5fa777; }
+.table-wrap {
+  width: 100%;
+  overflow-x: auto;
+  margin-top: 10px;
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+th, td {
+  border: 1px solid var(--line);
+  padding: 8px 10px;
+  vertical-align: top;
+  text-align: left;
+}
+th {
+  background: #f8fafc;
+  font-weight: 700;
+}
 .label {
   font-weight: 800;
   margin-bottom: 6px;
@@ -1262,6 +1452,8 @@ def render_chunk(chunk: dict) -> str:
         '<div class="box draft"><div class="label">Draft rebuttal response</div>',
         p(chunk["draft"]),
         "</div>",
+        rebuttal_figures_box(chunk),
+        manuscript_edits_box(chunk),
         instruction_box(chunk),
         note_box(chunk),
         "</section>",
@@ -1359,6 +1551,7 @@ def main() -> None:
             "Figure_tSNE_stability.png",
             "Figure_tSNE_direct_pca_false.png",
             "Figure_sample_correlation_heatmap.png",
+            "Figure_sample_correlation_annotation_legend.png",
             "Figure_PCA_scree.png",
             "Figure_differential_sensitivity.png",
             "Figure_metadata_only_classifier.png",
