@@ -257,36 +257,17 @@ INSTRUCTIONS = {
 }
 
 
-def instruction_box(chunk: dict) -> str:
-    if chunk.get("exact_edits"):
-        return ""
-    detail = INSTRUCTIONS.get(chunk["id"])
-    if not detail:
-        return ""
-    rows = [
-        ("Where to edit", [detail["where"]]),
-        ("What to change", detail["change"]),
-        ("Suggested wording", [detail["wording"]]),
-        ("Owner", [detail["owner"]]),
-        ("Status", [detail["status"]]),
-    ]
-    return (
-        '<div class="instruction-box"><div class="label">Remaining decisions / implementation notes</div>'
-        + "".join(
-            '<div class="instruction-row">'
-            f'<div class="instruction-key">{html.escape(key)}</div>'
-            f'<div class="instruction-value">{paragraph_list(value)}</div>'
-            "</div>"
-            for key, value in rows
-        )
-        + "</div>"
-    )
-
-
 def manuscript_edits_box(chunk: dict) -> str:
     edits = chunk.get("exact_edits")
     if not edits:
-        return ""
+        edits = [
+            {
+                "location": "Whole relevant manuscript section",
+                "find": "No exact paragraph locator has been assigned yet.",
+                "action": "Use the general manuscript guidance below.",
+                "replacement": " ".join(chunk.get("manuscript", [])),
+            }
+        ]
     note = (
         "<p>DOCX files do not preserve stable line numbers in a machine-readable way. "
         "The locations below use the current clean revision draft page/paragraph locator plus exact searchable text; "
@@ -302,21 +283,32 @@ def manuscript_edits_box(chunk: dict) -> str:
         for edit in edits
     ]
     return (
-        '<div class="box edit-box"><div class="label">Exact manuscript edits to make</div>'
+        '<div class="box edit-box"><div class="label">Suggested modification in the manuscript</div>'
         + note
         + table_block(["Location", "Find this text", "Action", "Proposed exact text"], rows)
         + "</div>"
     )
 
 
-def rebuttal_figures_box(chunk: dict) -> str:
+def draft_rebuttal_box(chunk: dict) -> str:
     figures = chunk.get("rebuttal_figures")
-    if not figures:
-        return ""
-    rows = [[f["where"], f["figure"], f["reason"], f["caption"]] for f in figures]
+    figure_table = ""
+    if figures:
+        rows = [[f["where"], f["figure"], f["reason"], f["caption"]] for f in figures]
+        figure_table = (
+            '<div class="subsection-label">Figures to include with this rebuttal response</div>'
+            + table_block(["Where to insert", "Figure file", "Why it belongs here", "Suggested caption text"], rows)
+        )
+    else:
+        figure_table = (
+            '<div class="subsection-label">Figures to include with this rebuttal response</div>'
+            "<p>No separate rebuttal figure is required for this point unless the editor requests all supporting material inline. "
+            "If space allows, refer to the relevant supplementary figure/table rather than duplicating it in the rebuttal letter.</p>"
+        )
     return (
-        '<div class="box figure-insert"><div class="label">Figures to insert in rebuttal / supplement</div>'
-        + table_block(["Where to insert", "Figure file", "Why it belongs here", "Suggested caption text"], rows)
+        '<div class="box draft"><div class="label">Draft for rebuttal letter</div>'
+        + p(chunk["draft"])
+        + figure_table
         + "</div>"
     )
 
@@ -641,6 +633,40 @@ CHUNKS = [
             "However, leading PCs also align with source/Sentrix and other cohort variables, so disease-only interpretation is not justified.",
         ],
         "draft": "We expanded the PCA evaluation substantially. We now provide scree and cumulative-variance plots for the leading PCs, multiple pairwise projections, centered-scaled and centered-unscaled analyses, quantitative associations between leading PCs and available metadata variables, and annotation of the strongest positive and negative loadings. The unscaled analysis supports the presence of structure beyond the original scaling choice, but the leading components remain associated with technical and cohort variables as well as disease group.",
+        "exact_edits": [
+            {
+                "location": "Current clean draft: page 9, paragraph 63; Methods, array data analysis",
+                "find": "Scaled PCA used prcomp with centering and unit-variance scaling; a centered, unscaled PCA was added as a sensitivity analysis.",
+                "action": "Keep this Methods sentence and add explicit rationale so the scaling choice is transparent.",
+                "replacement": "Scaled PCA used prcomp with centering and unit-variance scaling as the primary visualization so that CpGs with different absolute variance ranges contributed comparably. Because this choice can give low-variance probes increased relative weight, we also performed centered, unscaled PCA as a sensitivity analysis.",
+            },
+            {
+                "location": "Current clean draft: page 12, paragraph 75; Results, unsupervised methylation structure",
+                "find": "Leading PCs were associated not only with disease group but also with dataset source, Sentrix ID and other supplied metadata.",
+                "action": "Add the PCA scrutiny results after this sentence.",
+                "replacement": "We therefore added scree and cumulative-variance plots for the first 20 PCs, PC1-PC2, PC1-PC3 and PC2-PC3 projections, scaled and unscaled PCA, quantitative PC-metadata association testing, and annotation of the strongest positive and negative CpG loadings. These analyses support robust methylation structure but do not support interpretation of the leading PCs as disease-only axes.",
+            },
+            {
+                "location": "Supplementary figure/table legends",
+                "find": "No consolidated legend currently describes the expanded PCA scrutiny outputs.",
+                "action": "Add supplementary references for PCA scree, pairwise projections, unscaled PCA, PC-metadata associations and top-loadings table.",
+                "replacement": "Supplementary Figure X/Table X. Expanded PCA scrutiny. Scree and cumulative-variance plots, PC1-PC2/PC1-PC3/PC2-PC3 projections, centered-scaled and centered-unscaled PCA, PC-metadata eta-squared associations and top CpG loadings were used to evaluate whether leading components reflected disease group, technical variables or cohort structure.",
+            },
+        ],
+        "rebuttal_figures": [
+            {
+                "where": "Reviewer 1 PCA scrutiny response, after describing the added scree/pairwise PC analyses.",
+                "figure": "Figure_PCA_scree.pdf",
+                "reason": "Directly answers the request for variance explained and cumulative variance.",
+                "caption": "Variance explained and cumulative variance for the first 20 PCs in scaled and centered-unscaled PCA.",
+            },
+            {
+                "where": "Same PCA rebuttal subsection, after the scree figure or in the supplement.",
+                "figure": "Figure_PC_metadata_associations.pdf",
+                "reason": "Directly answers the request to quantify PC associations with diagnosis and confounders.",
+                "caption": "Eta-squared association of leading PCs with disease group and available metadata variables.",
+            },
+        ],
         "manuscript": [
             "Methods: explain scaled PCA and unscaled sensitivity.",
             "Results: avoid reading PC1/PC2 as disease-only axes.",
@@ -684,6 +710,40 @@ CHUNKS = [
             "ALS versus non-ALS NMA is the weakest comparison and should be framed as hypothesis-generating only.",
         ],
         "draft": "We recomputed PCA and t-SNE independently for all requested subsets rather than removing samples from the full-cohort embedding. The institutional-only and disease-pair analyses show weaker structure than the full mixed-source cohort. ALS versus non-ALS neurogenic atrophy was the least stable comparison and was sensitive to individual samples; we therefore revised the manuscript to describe this contrast as exploratory.",
+        "exact_edits": [
+            {
+                "location": "Current clean draft: page 9, paragraph 63; Methods, array data analysis",
+                "find": "PCA and t-SNE were recomputed independently after excluding MMC, excluding controls, restricting to the institutional archive, comparing IBM with non-IBM IIM, NOS, and comparing ALS with non-ALS NMA.",
+                "action": "Keep this Methods sentence; it is essential because the reviewer asked that subsets be recomputed, not only subsetted from the full embedding.",
+                "replacement": "PCA and t-SNE were recomputed independently after excluding MMC, excluding controls, restricting to the institutional archive, comparing IBM with non-IBM IIM, NOS, and comparing ALS with non-ALS NMA; these were new embeddings calculated within each subset, not visual subsets of the full-cohort embedding.",
+            },
+            {
+                "location": "Current clean draft: Results, after the main unsupervised PCA/t-SNE paragraph",
+                "find": "No explicit subset-analysis result paragraph may be present yet.",
+                "action": "Add a short Results paragraph summarizing the subset and influential-sample analyses.",
+                "replacement": "Subset analyses showed that the full-cohort structure was stronger than several clinically focused subset analyses. The institutional-only, IBM versus non-IBM IIM, NOS, and ALS versus non-ALS NMA embeddings were less separated than the full mixed-source cohort, and the ALS versus non-ALS NMA comparison showed the greatest sensitivity to individual samples. These results support cautious, exploratory interpretation of disease-pair contrasts.",
+            },
+            {
+                "location": "Discussion section discussing ALS/NMA and cohort limitations",
+                "find": "Any sentence implying robust ALS versus non-ALS NMA separation.",
+                "action": "Delete or soften strong ALS/NMA separation claims.",
+                "replacement": "The ALS versus non-ALS NMA comparison should be described as exploratory because of small ALS sample size, overlap in unsupervised analyses and sensitivity to individual samples.",
+            },
+        ],
+        "rebuttal_figures": [
+            {
+                "where": "Reviewer 1 subset/influence response.",
+                "figure": "Supplementary subset figures: subset_excluding_MMC_*.pdf, subset_excluding_controls_*.pdf, subset_institutional_archive_*.pdf, subset_IBM_vs_nonIBM_IIM_*.pdf, subset_ALS_vs_nonALS_NMA_*.pdf",
+                "reason": "Directly answers the request for recomputed PCA/t-SNE in each subset.",
+                "caption": "PCA and t-SNE recomputed independently within each requested subset.",
+            },
+            {
+                "where": "Same subset/influence response, after the subset panels.",
+                "figure": "influential_sample_analysis.pdf",
+                "reason": "Directly answers the request to assess sensitivity to individual influential samples.",
+                "caption": "Influence of individual samples on disease-group silhouette in clinically focused contrasts.",
+            },
+        ],
         "manuscript": [
             "Add supplementary subset figure references.",
             "Soften ALS-NMA claims in Results and Discussion.",
@@ -720,6 +780,46 @@ CHUNKS = [
             "Metadata-only predictive performance confirms that classifier results cannot be read as disease-intrinsic or clinically diagnostic.",
         ],
         "draft": "We performed additional downstream sensitivity analyses. Age/sex and biopsy-site adjusted differential methylation models were estimable for selected contrasts, whereas source and Sentrix models were rank deficient because these variables were structurally aligned with disease group. We also evaluated metadata-only classification and rebuilt supervised learning with patient-aware splitting and training-only feature selection. These results support a cautious interpretation: the supervised and differential analyses are exploratory and cannot establish disease-intrinsic methylation signatures or clinical diagnostic performance in this cohort.",
+        "exact_edits": [
+            {
+                "location": "Current clean draft: page 9, paragraph 63; Methods, array data analysis",
+                "find": "Differential methylation used limma with Benjamini-Hochberg FDR correction. Age/sex and biopsy-site sensitivity models were fitted when estimable; source and Sentrix models were retained as design audits when rank deficiency prevented separation from disease group.",
+                "action": "Keep this Methods text and verify that it is not hidden only in the rebuttal.",
+                "replacement": "Differential methylation used limma with Benjamini-Hochberg FDR correction. Age/sex and biopsy-site sensitivity models were fitted when estimable. Source and Sentrix were evaluated as design audits because full adjustment models containing disease group plus source or Sentrix were rank deficient, reflecting structural alignment in this cohort.",
+            },
+            {
+                "location": "Current clean draft: supervised learning Methods/Results and Discussion",
+                "find": "Any statement implying classifier performance alone validates disease-intrinsic methylation signatures.",
+                "action": "Delete or replace with explicit confounding caveat.",
+                "replacement": "Metadata-only classification was used as a confounding diagnostic, not as a biological classifier. Because source, Sentrix and demographic variables predicted disease group above chance, methylation-classifier performance cannot be interpreted as clinical validation or disease-intrinsic signal in this cohort.",
+            },
+            {
+                "location": "Discussion limitations",
+                "find": "No explicit downstream confounder-validation limitation may be present yet.",
+                "action": "Add limitation wording.",
+                "replacement": "Although downstream differential methylation and supervised classification analyses were rebuilt with leakage control and sensitivity checks, residual confounding remains possible because several technical and cohort variables were structurally aligned with disease group and could not be fully adjusted in this sample size.",
+            },
+        ],
+        "rebuttal_figures": [
+            {
+                "where": "Reviewer 1 downstream validation response.",
+                "figure": "Figure_differential_sensitivity.pdf",
+                "reason": "Shows how differential methylation results change under estimable covariate adjustments.",
+                "caption": "Differential methylation sensitivity to age/sex and biopsy-site adjustment where models were estimable.",
+            },
+            {
+                "where": "Same downstream validation response.",
+                "figure": "Figure_metadata_only_classifier.pdf",
+                "reason": "Shows why classifier performance cannot be interpreted as disease-intrinsic without caution.",
+                "caption": "Metadata-only classification demonstrates disease-group information contained in source, Sentrix and cohort variables.",
+            },
+            {
+                "where": "Same downstream validation response or supervised-learning response.",
+                "figure": "Figure_patient_aware_ML.pdf",
+                "reason": "Documents the leakage-fixed, patient-aware supervised learning result.",
+                "caption": "Patient-aware exploratory classification after training-only feature selection.",
+            },
+        ],
         "manuscript": [
             "Methods/Results: state which covariates were estimable.",
             "Discussion: state source/Sentrix confounding cannot be fully removed in this cohort.",
@@ -753,6 +853,46 @@ CHUNKS = [
             "It must not claim clinical diagnostic performance or broad differential diagnosis coverage.",
         ],
         "draft": "We agree and have revised the terminology throughout. The supervised learning analysis is now described as exploratory classification among the studied disease groups, not prediction of a correct clinical diagnosis. We also emphasize that non-ALS neurogenic atrophy and non-IBM IIM, NOS are study groups rather than complete diagnostic entities and that the present cohort does not include the full clinical differential diagnosis.",
+        "exact_edits": [
+            {
+                "location": "Submitted manuscript: reviewer-stated page 25; current clean draft: page 12, paragraph 109; supervised learning Results heading",
+                "find": "Supervised learning can predict diagnosis in most cases based on methylation data",
+                "action": "Replace heading; delete diagnosis language.",
+                "replacement": "Exploratory supervised classification of the studied disease groups",
+            },
+            {
+                "location": "Submitted manuscript: reviewer-stated page 25; current clean draft: page 12, paragraph 109",
+                "find": "Next, we wanted to find out whether supervised learning can predict a correct diagnosis.",
+                "action": "Replace sentence; avoid diagnosis/clinical performance wording.",
+                "replacement": "We evaluated whether methylation data could classify samples among the six studied groups while keeping samples from the same patient in one partition.",
+            },
+            {
+                "location": "Abstract and Discussion",
+                "find": "predicted diagnosis / correct diagnosis / beyond disease group / disease-specific classifier",
+                "action": "Delete these phrases or replace with disease-group classification wording.",
+                "replacement": "Use: classified the studied disease groups within this selected cohort. Add: This does not establish a clinically validated diagnostic classifier and does not cover the full clinical differential diagnosis.",
+            },
+            {
+                "location": "Current clean draft: page 12, paragraph 110; Figure 6 legend",
+                "find": "Supervised learning algorithms",
+                "action": "Replace or expand the figure legend to state the exploratory scope.",
+                "replacement": "Figure 6. Patient-aware exploratory classification of the studied disease groups. Results describe internal classification of this selected pilot cohort and are not an externally validated clinical diagnostic test.",
+            },
+        ],
+        "rebuttal_figures": [
+            {
+                "where": "Reviewer 2 supervised-learning wording response, only if figures are included inline in the rebuttal.",
+                "figure": "Figure_patient_aware_ML.pdf",
+                "reason": "Shows the corrected patient-aware exploratory classification, but should be framed as disease-group classification only.",
+                "caption": "Patient-aware exploratory classification among the studied disease groups.",
+            },
+            {
+                "where": "Same response or Reviewer 1 downstream response.",
+                "figure": "Figure_metadata_only_classifier.pdf",
+                "reason": "Supports the caution that classification is not clinical diagnostic validation.",
+                "caption": "Metadata-only classification indicates confounding risk in interpreting classifier performance.",
+            },
+        ],
         "manuscript": [
             "Search entire manuscript for diagnosis, diagnostic, disease-specific, entity-specific.",
             "Final proofreading after Juliane fills clinical placeholders.",
@@ -784,6 +924,34 @@ CHUNKS = [
             "Juliane's response should become both manuscript Methods text and rebuttal text.",
         ],
         "draft": "We have expanded the Methods section to describe the case-selection procedure in more detail. [JULIANE TO INSERT: total archive candidates by group, whether all candidates in the eight-year interval were reviewed, whether slides and clinical information were re-reviewed, who adjudicated inclusion, and the exclusion counts/reasons.] We agree that these details are necessary for transparency and have added them to the revised manuscript.",
+        "exact_edits": [
+            {
+                "location": "Current clean draft: page 12, paragraph 74; Human samples / cohort selection paragraph",
+                "find": "We selected 41 fresh-frozen muscle biopsies from our diagnostic archives with well-defined neuropathological diagnosis...",
+                "action": "Add a factual archive-selection paragraph immediately after this sentence. Do not invent missing clinical/pathology details.",
+                "replacement": "[JULIANE TO INSERT EXACT FACTS] During the eight-year archive interval, [N] candidate cases of non-IBM IIM, NOS and [N] candidate cases of non-ALS neurogenic atrophy were identified. Candidate cases were selected for methylation analysis based on [selection criteria]. [All / selected] candidate cases were reviewed. Inclusion was based on [histology only / histology plus clinical information / original report plus re-review]. Slides were reviewed by [names/roles], and disagreements or borderline cases were adjudicated by [process]. Exclusion criteria were [list], resulting in exclusion of [N] cases for [reasons].",
+            },
+            {
+                "location": "Methods, Human samples section",
+                "find": "Any vague statement implying cases were simply selected from the archive without explaining how.",
+                "action": "Delete vague selection wording or replace it with the factual audit trail above.",
+                "replacement": "Replace vague case-selection language with explicit candidate totals, selection process, slide-review process, clinical-information review, pathologist/adjudication process and exclusion reasons.",
+            },
+            {
+                "location": "Point-by-point rebuttal response to Reviewer 2 inclusion/exclusion comment",
+                "find": "[JULIANE TO INSERT...] placeholder",
+                "action": "Replace placeholder before sending to journal.",
+                "replacement": "We expanded the Methods to specify the archive-search interval, number of candidate cases, selection workflow, slide and clinical-information review, adjudication process and exclusion criteria. [Insert exact numbers and process from Juliane.]",
+            },
+        ],
+        "rebuttal_figures": [
+            {
+                "where": "Reviewer 2 inclusion/exclusion response, optional if Juliane wants a compact visual audit trail.",
+                "figure": "No current figure; recommended addition is a simple case-flow diagram/table after Juliane supplies candidate/exclusion counts.",
+                "reason": "Reviewer asks for case-selection transparency; a flow diagram would answer more clearly than prose if counts are available.",
+                "caption": "Case-selection flow from archive candidates to included methylation cohort, with exclusion reasons.",
+            },
+        ],
         "manuscript": [
             "Add factual archive selection paragraph from Juliane.",
             "Replace remaining xxx placeholders.",
@@ -816,6 +984,34 @@ CHUNKS = [
             "If Juliane has validated scores, we would need to rerun relevant models.",
         ],
         "draft": "We agree that cell composition is a major concern for bulk skeletal-muscle methylation. Validated sample-level deconvolution estimates or histopathology scores suitable for covariate adjustment were not available for the current analysis. We therefore did not add unsupported deconvolution modeling and instead revised the Discussion to state explicitly that the absence of cell-composition-adjusted analyses is a major limitation.",
+        "exact_edits": [
+            {
+                "location": "Current clean draft: page 12, paragraph 113; Discussion limitations",
+                "find": "Sample-level deconvolution estimates suitable for covariate adjustment were not available...",
+                "action": "Keep and strengthen the limitation wording to match Reviewer 2's request.",
+                "replacement": "Validated sample-level deconvolution estimates or histopathology scores suitable for covariate adjustment were not available for incorporation into the present differential methylation models. The absence of cell-composition-adjusted analyses is therefore a major limitation of this study.",
+            },
+            {
+                "location": "Methods/Results wherever lymphomonocytes are mentioned",
+                "find": "Any wording implying lymphomonocyte low/medium/high is a validated deconvolution estimate.",
+                "action": "Delete or soften; do not overinterpret lymphomonocyte categories.",
+                "replacement": "The supplied lymphomonocyte category was displayed only as a descriptive annotation because its scoring definition was unavailable to the analyst; it was not used as a validated deconvolution covariate.",
+            },
+            {
+                "location": "If Juliane supplies validated cell-composition or pathology covariates before resubmission",
+                "find": "Current limitation-only route.",
+                "action": "Change route: rerun relevant differential methylation models and replace limitation-only wording with adjusted-analysis wording.",
+                "replacement": "If validated covariates become available, rerun differential methylation models incorporating these covariates where estimable and report both adjusted results and remaining limitations.",
+            },
+        ],
+        "rebuttal_figures": [
+            {
+                "where": "Reviewer 2 cell-composition response.",
+                "figure": "No figure should be inserted unless validated deconvolution/pathology covariates are supplied and analyzed.",
+                "reason": "A figure based on undefined lymphomonocyte low/medium/high categories would be misleading.",
+                "caption": "If validated covariates become available: covariate-adjusted differential methylation sensitivity by cell-composition/pathology score.",
+            },
+        ],
         "manuscript": [
             "Discussion: major limitation wording.",
             "Methods/Results: only mention lymphomonocytes if Juliane defines the categories.",
@@ -849,6 +1045,40 @@ CHUNKS = [
             "Any biological interpretation should be framed as preliminary.",
         ],
         "draft": "We have further softened the ALS versus non-ALS neurogenic atrophy interpretation. This comparison is now described as exploratory and hypothesis-generating because of the small ALS sample size, overlap in unsupervised analyses, sensitivity to individual samples and loss of FDR-significant CpGs after biopsy-site adjustment.",
+        "exact_edits": [
+            {
+                "location": "Results sections discussing ALS versus non-ALS NMA",
+                "find": "Any wording implying robust ALS-specific methylation separation or validated ALS methylation signature.",
+                "action": "Delete strong wording and replace with exploratory wording.",
+                "replacement": "The ALS versus non-ALS NMA comparison is retained as exploratory and hypothesis-generating. Interpretation is limited by the small ALS sample size, overlap with non-ALS NMA in unsupervised analyses, sensitivity to individual samples and loss of FDR-significant CpGs after biopsy-site adjustment.",
+            },
+            {
+                "location": "Current clean draft: page 12, paragraph 112 or nearby Discussion paragraph",
+                "find": "Although not all cases of ALS could be distinguished unequivocally...",
+                "action": "Replace with cautious summary.",
+                "replacement": "ALS and non-ALS NMA showed partial overlap, and the ALS versus non-ALS NMA contrast was the least stable disease-pair comparison. We therefore interpret ALS/NMA-associated findings as preliminary observations that require validation in larger, balanced cohorts.",
+            },
+            {
+                "location": "Figure/table legends for ALS/NMA differential results",
+                "find": "Any legend suggesting definitive ALS-specific biology.",
+                "action": "Add limitation phrase.",
+                "replacement": "ALS versus non-ALS NMA results are exploratory because of small group size and sensitivity to biopsy-site adjustment.",
+            },
+        ],
+        "rebuttal_figures": [
+            {
+                "where": "Reviewer 2 ALS/NMA softening response.",
+                "figure": "Figure_differential_sensitivity.pdf",
+                "reason": "Shows that ALS/NMA significance is sensitive to biopsy-site adjustment.",
+                "caption": "Differential methylation sensitivity analysis showing reduced support for ALS versus non-ALS NMA after biopsy-site adjustment.",
+            },
+            {
+                "where": "Same response or supplementary material.",
+                "figure": "subset_ALS_vs_nonALS_NMA_PCA.pdf, subset_ALS_vs_nonALS_NMA_tSNE.pdf, influential_sample_analysis.pdf",
+                "reason": "Supports the cautious wording by showing overlap and individual-sample sensitivity.",
+                "caption": "ALS versus non-ALS NMA subset embeddings and individual-sample influence analysis.",
+            },
+        ],
         "manuscript": [
             "Results and Discussion: avoid strong ALS-specific methylation signature wording.",
         ],
@@ -880,6 +1110,40 @@ CHUNKS = [
             "A final proofreading pass should happen after those insertions.",
         ],
         "draft": "We carefully revised the manuscript language to remove diagnostic and disease-specific overstatements, corrected the supplementary table reference, and edited the supervised-learning terminology. The manuscript has also been reviewed for remaining author-level placeholders; these will be resolved before resubmission.",
+        "exact_edits": [
+            {
+                "location": "Submitted manuscript: reviewer-stated page 25; supervised learning section",
+                "find": "diagnosis / correct diagnosis / predicted diagnosis",
+                "action": "Replace throughout supervised-learning text.",
+                "replacement": "Use disease group, studied disease groups, or exploratory classification among the studied groups. Do not use diagnosis unless referring to the original clinical/histopathological diagnosis used for case definition.",
+            },
+            {
+                "location": "Submitted manuscript: reviewer-stated page 28; supplement reference",
+                "find": "supplementary table xy",
+                "action": "Replace placeholder.",
+                "replacement": "supplementary tables 2 and 3",
+            },
+            {
+                "location": "Entire manuscript and rebuttal",
+                "find": "disease-specific / entity-specific / clinical diagnostic classifier / beyond disease group / correct diagnosis",
+                "action": "Delete or replace overstatements.",
+                "replacement": "Use disease-group-associated, exploratory, pilot cohort, internal classification, and requires validation in larger balanced cohorts.",
+            },
+            {
+                "location": "Title page and author list",
+                "find": "Tayfun Palaz placeholder / co-last or equal-contribution wording / unresolved author order",
+                "action": "Resolve before journal submission.",
+                "replacement": "[AUTHORS TO CONFIRM] Final author list, author order, Tayfun Palaz status, and co-last/equal-contribution wording.",
+            },
+        ],
+        "rebuttal_figures": [
+            {
+                "where": "Reviewer 2 proofreading response.",
+                "figure": "No figure required.",
+                "reason": "This is a manuscript-cleanup and terminology issue.",
+                "caption": "Not applicable.",
+            },
+        ],
         "manuscript": [
             "Confirm author list/order and Tayfun Palaz placeholder.",
             "Confirm co-last-author wording.",
@@ -1138,6 +1402,11 @@ blockquote {
 .box.need { border-left-color: #d4ad45; background: #fffdf7; }
 .box.edit-box { border-left-color: #4b7bec; }
 .box.figure-insert { border-left-color: #5fa777; }
+.subsection-label {
+  margin: 14px 0 6px;
+  font-weight: 800;
+  color: #475569;
+}
 .table-wrap {
   width: 100%;
   overflow-x: auto;
@@ -1465,12 +1734,8 @@ def render_chunk(chunk: dict) -> str:
         '<div class="box interpretation"><div class="label">Interpretation</div>',
         li(chunk["interpretation"]),
         "</div>",
-        '<div class="box draft"><div class="label">Draft rebuttal response</div>',
-        p(chunk["draft"]),
-        "</div>",
-        rebuttal_figures_box(chunk),
+        draft_rebuttal_box(chunk),
         manuscript_edits_box(chunk),
-        instruction_box(chunk),
         note_box(chunk),
         "</section>",
     ]
@@ -1502,7 +1767,7 @@ def build() -> str:
 <body>
 <header>
   <h1>Reviewer response workbook</h1>
-  <p>Interactive working report for Juliane and Joseph. The structure follows Juliane's 2026-07-08 email and labels each topic by reviewer source, with evidence, interpretation, draft rebuttal text, figure-insertion guidance, exact manuscript edits where available and note boxes.</p>
+  <p>Interactive working report for Juliane and Joseph. The structure follows Juliane's 2026-07-08 email and labels each topic by reviewer source, with evidence, interpretation, a complete draft for the rebuttal letter, suggested manuscript modifications, and note boxes.</p>
 </header>
 <div class="toolbar">
   <div class="toolbar-inner">
