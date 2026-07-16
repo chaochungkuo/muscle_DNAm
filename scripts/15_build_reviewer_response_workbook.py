@@ -540,7 +540,66 @@ header {
 }
 header h1 { margin: 0 0 8px; font-size: 30px; }
 header p { margin: 0; color: #d1d5db; max-width: 1050px; }
-main { max-width: 1180px; margin: 0 auto; padding: 24px; }
+.app-shell {
+  display: grid;
+  grid-template-columns: 300px minmax(0, 1fr);
+  gap: 0;
+  max-width: 1500px;
+  margin: 0 auto;
+}
+.sidebar {
+  position: sticky;
+  top: 64px;
+  height: calc(100vh - 64px);
+  overflow: auto;
+  align-self: start;
+  padding: 18px 14px 24px 18px;
+  border-right: 1px solid var(--line);
+  background: #eef2f7;
+}
+.sidebar-title {
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: #475569;
+  font-weight: 800;
+  margin: 0 0 10px;
+}
+.sidebar input {
+  width: 100%;
+  border: 1px solid #aeb8c8;
+  border-radius: 6px;
+  padding: 8px 9px;
+  margin-bottom: 12px;
+  background: white;
+}
+.sidebar a {
+  display: block;
+  padding: 8px 9px;
+  margin: 3px 0;
+  border-radius: 6px;
+  color: #243044;
+  text-decoration: none;
+  font-size: 13px;
+  line-height: 1.25;
+}
+.sidebar a:hover { background: #dfe8f5; }
+.sidebar a.active {
+  background: white;
+  color: var(--blue);
+  box-shadow: inset 3px 0 0 var(--blue);
+  font-weight: 800;
+}
+.sidebar .nav-group {
+  margin: 14px 0 6px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+.content {
+  min-width: 0;
+}
+main { max-width: 1120px; margin: 0 auto; padding: 24px; }
 .toolbar {
   position: sticky;
   top: 0;
@@ -551,7 +610,7 @@ main { max-width: 1180px; margin: 0 auto; padding: 24px; }
   backdrop-filter: blur(8px);
 }
 .toolbar-inner {
-  max-width: 1180px;
+  max-width: 1500px;
   margin: 0 auto;
   padding: 0 24px;
   display: flex;
@@ -713,11 +772,35 @@ textarea {
   padding: 12px;
 }
 .small { color: var(--muted); font-size: 13px; }
+html { scroll-behavior: smooth; }
+section[id] { scroll-margin-top: 84px; }
+mark.search-hit {
+  background: #fff1a8;
+  color: inherit;
+  padding: 0 2px;
+  border-radius: 3px;
+}
 @media print {
-  .toolbar, textarea, button { display: none; }
+  .toolbar, .sidebar, textarea, button { display: none; }
   body { background: white; }
+  .app-shell { display: block; max-width: none; }
   main { max-width: none; }
   .card { box-shadow: none; break-inside: avoid; }
+}
+@media (max-width: 980px) {
+  .app-shell { display: block; }
+  .sidebar {
+    position: sticky;
+    top: 58px;
+    z-index: 4;
+    height: auto;
+    max-height: 280px;
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
+    padding: 12px 16px;
+  }
+  .sidebar a { display: inline-block; max-width: 260px; vertical-align: top; }
+  main { padding: 16px; }
 }
 """
 
@@ -795,6 +878,33 @@ function clearNotes() {
 }
 
 document.addEventListener("DOMContentLoaded", loadNotes);
+
+function setupSidebar() {
+  const navLinks = Array.from(document.querySelectorAll(".sidebar a[data-target]"));
+  const sections = navLinks
+    .map(link => document.getElementById(link.dataset.target))
+    .filter(Boolean);
+
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+      if (!entry.isIntersecting) return;
+      navLinks.forEach(link => link.classList.toggle("active", link.dataset.target === entry.target.id));
+    });
+  }, {rootMargin: "-25% 0px -65% 0px", threshold: 0.01});
+  sections.forEach(section => observer.observe(section));
+
+  const filter = document.getElementById("sidebar-filter");
+  if (filter) {
+    filter.addEventListener("input", () => {
+      const needle = filter.value.trim().toLowerCase();
+      navLinks.forEach(link => {
+        link.hidden = needle && !link.textContent.toLowerCase().includes(needle);
+      });
+    });
+  }
+}
+
+document.addEventListener("DOMContentLoaded", setupSidebar);
 """
 
 
@@ -870,6 +980,10 @@ def render_chunk(chunk: dict) -> str:
 
 def build() -> str:
     toc = "".join(f'<a href="#{c["id"]}">{html.escape(c["title"])}</a>' for c in CHUNKS)
+    side_toc = "".join(
+        f'<a href="#{c["id"]}" data-target="{c["id"]}">{html.escape(c["title"])}</a>'
+        for c in CHUNKS
+    )
     chunks = "\n".join(render_chunk(c) for c in CHUNKS)
     payload = {
         "title": "Reviewer response workbook",
@@ -897,8 +1011,18 @@ def build() -> str:
     <span class="small" id="save-stamp">Notes autosave in this browser only.</span>
   </div>
 </div>
+<div class="app-shell">
+<aside class="sidebar" aria-label="Reviewer response navigation">
+  <div class="sidebar-title">Navigation</div>
+  <input id="sidebar-filter" type="search" placeholder="Filter topics">
+  <a href="#how-to-use" data-target="how-to-use">How to use</a>
+  <a href="#executive-summary" data-target="executive-summary">Executive summary</a>
+  <div class="nav-group">Reviewer chunks</div>
+  {side_toc}
+</aside>
+<div class="content">
 <main>
-  <section class="card">
+  <section class="card" id="how-to-use">
     <h2>How to use this workbook</h2>
     <div class="warning"><strong>Important:</strong> Text typed into note boxes is stored in the browser, not written back into this HTML file. Before sending feedback, use <strong>Copy all notes</strong> or <strong>Download notes as Markdown</strong>.</div>
     <div class="summary-grid">
@@ -909,7 +1033,7 @@ def build() -> str:
     </div>
   </section>
 
-  <section class="card">
+  <section class="card" id="executive-summary">
     <h2>Executive summary</h2>
     {li([
         "The analysis response is largely complete: metadata annotation, t-SNE sensitivity, direct pca=FALSE t-SNE, label-free correlation heatmap, expanded PCA, subset/influence analyses, differential sensitivity and patient-aware supervised learning have been done.",
@@ -925,6 +1049,8 @@ def build() -> str:
 
   {chunks}
 </main>
+</div>
+</div>
 <script type="application/json" id="workbook-metadata">{html.escape(json.dumps(payload))}</script>
 <script>{SCRIPT}</script>
 </body>
