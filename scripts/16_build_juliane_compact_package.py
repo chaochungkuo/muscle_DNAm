@@ -182,8 +182,7 @@ def highlight_paragraph(paragraph, color=WD_COLOR_INDEX.BRIGHT_GREEN) -> None:
 
 def build_highlighted_manuscript() -> Path:
     source = FINAL_DRAFTS / "Bremer_manuscript_reviewer_round_2_clean_draft.docx"
-    if not source.exists():
-        subprocess.run(["python", "scripts/11_build_revision_documents.py"], cwd=ROOT, check=True)
+    subprocess.run(["python", "scripts/11_build_revision_documents.py"], cwd=ROOT, check=True)
     doc = Document(source)
 
     key = doc.paragraphs[0].insert_paragraph_before()
@@ -250,6 +249,9 @@ Main files:
 1. 01_reviewer_response_report.html — main readable report linking reviewer comments, analyses, rebuttal drafts and manuscript modifications.
 2. 02_rebuttal_letter_draft_with_figures.docx — point-by-point rebuttal draft with embedded figures where recommended.
 3. 03_manuscript_clean_highlighted_draft.docx — clean revised manuscript draft; analytical revisions are highlighted and unresolved Juliane/author decisions are highlighted.
+
+Manuscript base:
+- 03_manuscript_clean_highlighted_draft.docx is generated from manuscripts/Bremer_manuscript_changes not marked.docx.
 
 Supporting files:
 - figures/ — PDF versions of main and supplementary figures needed for rebuttal, supplement or manuscript figure assembly.

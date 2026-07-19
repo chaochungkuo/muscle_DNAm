@@ -9,7 +9,7 @@ ROOT=Path(__file__).resolve().parents[1]
 PROJECT=ROOT.parents[1]
 MANUSCRIPTS=PROJECT/'manuscripts'
 OUT=MANUSCRIPTS/'reviewer_round_2/final_drafts'; OUT.mkdir(parents=True,exist_ok=True)
-SRC=MANUSCRIPTS/'2026 06 02_Bremer_manuscript (1).docx'
+SRC=MANUSCRIPTS/'Bremer_manuscript_changes not marked.docx'
 
 def accepted_changes_copy(src, dst):
     ns='http://schemas.openxmlformats.org/wordprocessingml/2006/main'
@@ -46,6 +46,12 @@ def replace_inside(doc,old,new):
             p.text=p.text.replace(old,new); return p
     raise KeyError(old)
 
+def replace_inside_optional(doc,old,new):
+    for p in doc.paragraphs:
+        if old in p.text:
+            p.text=p.text.replace(old,new); return p
+    return None
+
 accepted=OUT/'_accepted_changes_working_copy.docx'
 accepted_changes_copy(SRC,accepted)
 doc=Document(accepted)
@@ -81,9 +87,8 @@ replace(doc,"Methylation profile-based diagnostic tools work", "Methylation clas
 replace(doc,"Although not all cases of ALS", "ALS and non-ALS NMA were not unequivocally separated. The very small ALS group, individual-sample influence and loss of FDR-significant CpGs after biopsy-site adjustment require that this comparison be considered preliminary and hypothesis-generating.")
 replace(doc,"In conclusion, the present study demonstrates", "In conclusion, this pilot study demonstrates that bulk-muscle methylation contains strong structure associated with the studied pathological groups and highlights candidate biological pathways. The study does not establish disease-entity-specific methylation signatures or a clinically validated diagnostic classifier because technical, demographic, biopsy-site and cellular-composition effects cannot be fully separated in this cohort.")
 replace(doc,"Even in this small cohort", "The findings require validation in larger, prospectively collected, balanced and independent cohorts. Such studies should include standardized biopsy sites and tissue handling, patient-level grouping, cell-composition or histopathology covariates, clinically relevant differential diagnoses, and repeated or nested validation. The present supervised estimates are internal to one selected cohort and should not be generalized to routine diagnosis.")
-replace(doc,"he application of this method", "Application to larger cohorts, correlation with disease duration, autoantibodies and treatment, and inclusion of mixed or diagnostically difficult cases will be necessary to determine whether any methylation features add value beyond histopathology and clinical information.")
-replace_inside(doc,"Histological features are now included in supplementary table xy", "Histological features are included in Supplementary Tables 2 and 3")
-replace_inside(doc,"Supplementary Table XY", "Supplementary Tables 2 and 3")
+replace_inside_optional(doc,"Histological features are now included in supplementary table xy", "Histological features are included in Supplementary Tables 2 and 3")
+replace_inside_optional(doc,"Supplementary Table XY", "Supplementary Tables 2 and 3")
 
 # Add a visible draft banner without altering the original file.
 banner=doc.paragraphs[0].insert_paragraph_before()
