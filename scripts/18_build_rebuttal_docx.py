@@ -265,7 +265,7 @@ The reviewer asks for more detailed PCA evaluation, including scree and cumulati
 We expanded the PCA analysis in three ways. First, we added scree and cumulative-variance plots to show how much methylation variance is captured by the leading PCs. Second, we plotted PC1-PC2, PC1-PC3 and PC2-PC3 to test whether the observed structure is restricted to the first two PCs or also appears in other major components. Third, we repeated PCA using centered but unscaled M-values to test whether the observed structure depends on unit-variance scaling of CpGs. These analyses show that disease-group-associated structure is present in PCA, but that leading PCs also overlap with cohort variables such as source, Sentrix ID, age, sex and biopsy site. We therefore retained the PCA result but revised the interpretation to avoid presenting the PCs as disease-only axes.
 """,
         """
-Add Methods detail for scaled PCA (scale.=TRUE) and unscaled PCA sensitivity analysis (scale.=FALSE). Add Results text summarizing scree/cumulative variance and PC-metadata association. Replace ambiguous text such as "the unscaled analysis supports the presence of structure" with explicit wording: "the group-associated pattern was also visible in unscaled PCA, but leading PCs remained associated with cohort variables." Do not claim that PCA axes are disease-specific.
+Add Methods detail for scaled PCA (scale.=TRUE) and unscaled PCA sensitivity analysis (scale.=FALSE). Add Results text summarizing scree/cumulative variance and PC-metadata association. Replace ambiguous text such as "the unscaled analysis supports the presence of structure" with explicit wording: "the group-associated pattern was also visible in unscaled PCA, but leading PCs remained associated with cohort variables." Do not claim that PCA axes are disease-only axes.
 """,
         [],
         [
@@ -285,11 +285,9 @@ We agree that the previous top-CpG heatmap was label-informed and should not be 
         """
 Replace Figure 1F with the full-matrix sample-to-sample correlation heatmap. Add a complete annotation legend for all colors. Move or re-label any top-CpG heatmap as supervised/descriptive only, or remove it from the main unsupervised figure if space is limited.
 """,
+        [],
         [
-            (
-                "Response_Figure_1_unsupervised_structure.png",
-                "Response Figure 1. Panel D shows the full-matrix label-free correlation heatmap; panel E provides the annotation legend.",
-            )
+            "Response Figure 1, panels D–E, show the full-matrix label-free correlation heatmap and annotation legend. The figure is embedded once above to avoid duplicating the same multi-panel figure in the main rebuttal."
         ],
     )
 
@@ -322,7 +320,7 @@ The reviewer states that the unsupervised analyses should be resolved before dow
 The additional analyses support the presence of disease-group-associated methylation structure, while also showing that cohort variables such as source, Sentrix ID, age, sex and biopsy site partly overlap with disease group in this retrospective pilot cohort. Where statistically possible, we fitted differential methylation models adjusted for age/sex or biopsy site and found that several disease-group-associated results persisted, whereas the ALS versus non-ALS NMA contrast was more sensitive to adjustment. We also rebuilt supervised learning using patient-aware splitting and training-only feature selection, and added metadata-only classification as a confounding diagnostic. These analyses do not negate the disease-group-associated findings; rather, they define their appropriate scope. We retained the differential methylation, gene set enrichment and supervised-learning findings, but revised the manuscript to avoid overclaiming clinical diagnostic performance, disease-intrinsic specificity or final mechanistic proof from pathway enrichment.
 """,
         """
-Revise downstream Results and Discussion to state that supervised learning supports disease-group-associated signal under leakage-controlled analysis, but is not a validated clinical diagnostic classifier. Describe metadata-only classification as a confounding diagnostic, not as a disease classifier. Keep differential methylation and gene set enrichment interpretation exploratory, use candidate-pathway language, and state that pathway findings may reflect both disease-associated biology and tissue-composition differences in bulk biopsy material.
+Revise downstream Results and Discussion to state that supervised learning supports disease-group-associated signal under leakage-controlled analysis, but is not a validated clinical diagnostic classifier. Describe metadata-only classification as a confounding diagnostic, not as a disease classifier. Keep differential methylation and gene set enrichment interpretation exploratory, use candidate pathway language, and state that pathway findings may reflect both disease-associated biology and tissue-composition differences in bulk biopsy material.
 """,
         [
             (
@@ -337,7 +335,7 @@ Revise downstream Results and Discussion to state that supervised learning suppo
     checks = [
         'Use "disease group" rather than "diagnosis" when referring to machine-learning labels.',
         'Use "in-house data" for the non-public/non-GEO methylation samples generated within this study; avoid wording that implies a homogeneous single-source subset.',
-        'Use "disease-group-associated methylation structure" rather than "disease-specific signature" unless independently validated.',
+        'Use "disease-group-associated methylation structure" rather than disease-only or disease-intrinsic signature wording unless independently validated.',
         'State that t-SNE is qualitative and parameter-dependent; do not interpret global distances quantitatively.',
         'State that bulk-tissue methylation cannot separate primary disease-intrinsic epigenetic changes from tissue-composition effects.',
         'State that ALS versus non-ALS NMA is exploratory because of small sample size and sample influence.',
