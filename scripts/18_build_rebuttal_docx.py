@@ -176,23 +176,68 @@ def build_doc() -> None:
     add_overall_strategy(doc)
 
     doc.add_heading("Reviewer 2", level=1)
-    add_reviewer_comment(
+
+    add_section(
         doc,
+        "Reviewer 2.1. Inclusion/exclusion criteria and analytical sample set",
         """
-The revised manuscript by Benner et al has addressed many of the concerns I raised about the initial submission, but additional revisions are needed from my perspective. The reviewer requests clearer inclusion/exclusion criteria, explicit handling of tissue composition limitations, softer language for the ALS/non-ALS comparison, and careful proofreading to remove diagnostic overstatements and typographic errors.
+The reviewer states that the inclusion and exclusion criteria are still not sufficiently detailed. Specifically, the reviewer asks how the small non-IBM IIM, NOS and non-ALS NMA groups were selected, whether all candidate cases in the eight-year period were reviewed, whether slides or reports were reviewed before inclusion, how differences among diagnosing pathologists were controlled for, and whether clinical information was evaluated.
 """,
+        """
+We thank the reviewer for requesting clarification. We revised the manuscript to state what is supported by the analytical record. The methylation analyses included all samples that were provided for this study, fulfilled the stated pre-analytical sample requirements, and passed methylation-array quality control. Samples were not selected or excluded on the basis of methylation patterns, clustering, supervised-learning performance, or any expected analytical result. Case groups were defined using the clinicopathological disease-group labels available for the study, and the revised manuscript now avoids implying that the analyzed cohort represents all biopsies or all potential cases from a historical source population.
+""",
+        """
+Methods: state that all provided samples meeting the stated tissue/clinical-information requirements and passing methylation-array QC were analyzed. Do not claim historical candidate-case totals that are not available from the analysis record. Results: describe the final analyzed sample set rather than implying post hoc analytical sample selection.
+""",
+        [],
     )
-    add_response(
+
+    add_section(
         doc,
+        "Reviewer 2.2. Cell composition and deconvolution limitation",
         """
-We thank the reviewer for the careful reassessment. We revised the manuscript to clarify the analytical sample set. The methylation analyses included all samples that were provided for this study, fulfilled the stated pre-analytical sample requirements, and passed methylation-array quality control. We did not exclude or select samples on the basis of methylation patterns, clustering, supervised-learning performance, or any expected analytical result. We also expanded the limitation on bulk-tissue methylation profiling, emphasizing that the methylation profile may reflect both disease-associated biology and differences in tissue composition. Finally, we softened the ALS versus non-ALS NMA language, replaced diagnostic overstatements with disease-group terminology, corrected the supplementary table references, and proofread the revised manuscript.
+The reviewer agrees that longitudinal disease analyses are beyond the scope of the manuscript, but clarifies that the core concern is tissue and cell-type composition. The reviewer asks either for deconvolution estimates to be incorporated into differential methylation models, or for the absence of such analyses to be explicitly discussed as a major limitation.
 """,
+        """
+We agree that bulk muscle-biopsy methylation profiles can reflect variable tissue and cellular composition, including inflammatory infiltrates, fibrosis, necrosis/regeneration and other biopsy-composition effects. We therefore expanded the manuscript limitation to state that the current bulk-tissue data cannot distinguish primary disease-intrinsic methylation changes from secondary changes related to tissue composition. We displayed the available lymphomonocytic infiltration category only as supplied in the metadata table, without independently interpreting or rescoring it. Validated fibrosis, necrosis, fiber-type and denervation scores were not available for all samples and were therefore not inferred or incorporated into differential methylation models.
+""",
+        """
+Discussion/limitations: explicitly state that absence of complete validated tissue-composition and pathology-severity covariates is a major limitation. Methods/results: do not infer unavailable fibrosis, necrosis, fiber-type or denervation scores. Keep pathway interpretation exploratory and linked to bulk-tissue limitations.
+""",
+        [],
     )
-    add_action(
+
+    add_section(
         doc,
+        "Reviewer 2.3. ALS versus non-ALS NMA language",
         """
-Use "disease group" terminology when describing supervised learning performance. State that ALS versus non-ALS NMA is exploratory because of the small ALS sample size and sensitivity to individual samples. For sample selection, state only what is supported by the analysis record: all provided samples meeting the stated sample requirements and passing methylation-array QC were analyzed; no samples were selected or excluded based on methylation patterns, clustering, classifier performance, or expected analytical results.
+The reviewer states that retaining the ALS versus non-ALS comparison is acceptable, but asks that the relevant language be further softened to avoid overinterpretation given the small number of ALS cases.
 """,
+        """
+We agree. We retained the ALS versus non-ALS NMA comparison, but revised the manuscript to describe this analysis as exploratory and hypothesis-generating. The revised text now states that ALS and non-ALS NMA remain partially overlapping in unsupervised analyses, that the ALS versus non-ALS NMA subset was the least stable disease-pair comparison, and that the comparison is sensitive to individual samples. We removed language implying validated diagnostic separation or robust disease-specific classification for ALS versus non-ALS NMA.
+""",
+        """
+Abstract, Results and Discussion: describe ALS versus non-ALS NMA as exploratory and hypothesis-generating. Do not present ALS/NMA separation as a validated diagnostic finding. Refer to Supplementary Response Figure S5 for the ALS/NMA robustness checks.
+""",
+        [],
+        [
+            "Supplementary Response Figure S5 summarizes exploratory ALS versus non-ALS NMA subset PCA/t-SNE and individual-sample influence analyses.",
+        ],
+    )
+
+    add_section(
+        doc,
+        "Reviewer 2.4. Proofreading, disease-group terminology and supplementary table reference",
+        """
+The reviewer states that the revised manuscript contains grammatical and typographic errors and incomplete revisions. The reviewer specifically notes that supervised learning should not be described as predicting a correct diagnosis; the correct term is disease group. The reviewer also notes that the abstract overstates prediction beyond disease group, because non-ALS and non-IBM IIM, NOS are not diagnoses and other differential diagnoses have not been evaluated. Finally, the reviewer notes an incorrect reference to supplementary table xy instead of supplementary tables 2 and 3, and asks for careful proofreading before resubmission.
+""",
+        """
+We agree and revised the wording throughout. Supervised learning is now described as disease-group classification within this selected pilot cohort, not as prediction of a correct diagnosis. The abstract, Results, Figure 6 legend and Discussion now state that classifier performance is internal to the selected cohort and requires validation in independent cohorts. We corrected the supplementary table reference to supplementary tables 2 and 3 and proofread the revised manuscript to remove diagnostic overstatements and inconsistent disease-specific wording.
+""",
+        """
+Global manuscript pass: use disease-group terminology for supervised learning labels; avoid diagnostic-classifier validation language; correct the supplementary table reference; remove inconsistent overstatements and typographic errors.
+""",
+        [],
     )
 
     doc.add_heading("Reviewer 1", level=1)
@@ -262,10 +307,10 @@ Add supplementary response figures showing PCA and t-SNE colored by available me
 The reviewer asks for more detailed PCA evaluation, including scree and cumulative-variance plots, multiple PC projections, evaluation beyond PC1-PC2, and comparison with unscaled PCA because scale.=TRUE gives all CpGs equal variance weight. The reviewer also asks for quantitative association of leading PCs with diagnosis and potential confounders.
 """,
         """
-We expanded the PCA analysis in three ways. First, we added scree and cumulative-variance plots to show how much methylation variance is captured by the leading PCs. Second, we plotted PC1-PC2, PC1-PC3 and PC2-PC3 to test whether the observed structure is restricted to the first two PCs or also appears in other major components. Third, we repeated PCA using centered but unscaled M-values to test whether the observed structure depends on unit-variance scaling of CpGs. These analyses show that disease-group-associated structure is present in PCA, but that leading PCs also overlap with cohort variables such as source, Sentrix ID, age, sex and biopsy site. We therefore retained the PCA result but revised the interpretation to avoid presenting the PCs as disease-only axes.
+We expanded the PCA analysis in four ways. First, we added scree and cumulative-variance plots to show how much methylation variance is captured by the leading PCs. Second, we plotted PC1-PC2, PC1-PC3 and PC2-PC3 to test whether the observed structure is restricted to the first two PCs or also appears in other major components. Third, we annotated the strongest positive and negative CpG loadings of the leading PCs to support interpretation of whether major components reflected disease group, cohort variables or technical structure. Fourth, we repeated PCA using centered but unscaled M-values to test whether the observed structure depends on unit-variance scaling of CpGs. These analyses show that disease-group-associated structure is present in PCA, but that leading PCs also overlap with cohort variables such as source, Sentrix ID, age, sex and biopsy site. We therefore retained the PCA result but revised the interpretation to avoid presenting the PCs as disease-only axes.
 """,
         """
-Add Methods detail for scaled PCA (scale.=TRUE) and unscaled PCA sensitivity analysis (scale.=FALSE). Add Results text summarizing scree/cumulative variance and PC-metadata association. Replace ambiguous text such as "the unscaled analysis supports the presence of structure" with explicit wording: "the group-associated pattern was also visible in unscaled PCA, but leading PCs remained associated with cohort variables." Do not claim that PCA axes are disease-only axes.
+Add Methods detail for scaled PCA (scale.=TRUE) and unscaled PCA sensitivity analysis (scale.=FALSE). Add Results text summarizing scree/cumulative variance, PC-metadata association and annotated leading positive/negative CpG loadings. Replace ambiguous text such as "the unscaled analysis supports the presence of structure" with explicit wording: "the group-associated pattern was also visible in unscaled PCA, but leading PCs remained associated with cohort variables." Do not claim that PCA axes are disease-only axes.
 """,
         [],
         [
