@@ -171,12 +171,10 @@ def build_heatmap_with_legend_source() -> None:
     below_h = 2400
     below_margin = 45
     below_gap = 45
-    below_label_h = 60
-    heat_box_h = 1450
+    below_label_h = 0
+    heat_box_h = 1510
     legend_box_h = below_h - (2 * below_margin + below_label_h + heat_box_h + below_gap)
     below = Image.new("RGB", (below_w, below_h), "white")
-    below_draw = ImageDraw.Draw(below)
-    below_draw.text((below_margin, below_margin + 4), "Full-matrix correlation heatmap with annotation legend", font=SUBTITLE_FONT, fill=(30, 41, 59))
 
     heat_top = below_margin + below_label_h
     heat_contained = ImageOps.contain(
