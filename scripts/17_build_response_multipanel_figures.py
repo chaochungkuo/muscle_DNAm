@@ -159,12 +159,12 @@ def main() -> None:
     )
 
     pca_metadata_panels = [
-        ("display_group", "Disease group"),
-        ("sentrix_id", "Sentrix ID"),
-        ("age_group", "Age group"),
-        ("gender", "Sex"),
-        ("muscle_location_group", "Biopsy site"),
-        ("city_of_origin", "City"),
+        ("display_group", "Disease group", "Disease groups are shown on the same scaled PCA projection to define the reference pattern for comparison with cohort variables."),
+        ("sentrix_id", "Sentrix ID", "Sentrix IDs are overlaid on the same PCA coordinates to assess whether chip-level structure overlaps with the leading components."),
+        ("age_group", "Age group", "Age categories are displayed on the unchanged PCA projection to evaluate whether age distribution contributes to the visible structure."),
+        ("gender", "Sex", "Sex is shown despite removal of sex-chromosome probes, because autosomal methylation can still show sex-associated differences."),
+        ("muscle_location_group", "Biopsy site", "Biopsy-site groups are displayed to assess whether anatomical sampling location overlaps with the PCA structure."),
+        ("city_of_origin", "City", "City or contributing center is shown as an available cohort variable that may overlap with disease group and technical processing."),
     ]
     metadata_panels = [
         ("display_group", "Disease group"),
@@ -181,8 +181,8 @@ def main() -> None:
         "Supplementary Response Figure S1. PCA colored by available metadata",
         "The same scaled PCA coordinates are recolored by selected available metadata variables so that disease-group structure can be visually compared with Sentrix ID, age, sex, biopsy site and city without changing the underlying PCA projection.",
         [
-            panel(chr(65 + i), f"pca_scaled_by_{stem}", title, "Same PCA coordinates; only the color annotation changes.")
-            for i, (stem, title) in enumerate(pca_metadata_panels)
+            panel(chr(65 + i), f"pca_scaled_by_{stem}", title, caption)
+            for i, (stem, title, caption) in enumerate(pca_metadata_panels)
         ],
         ncols=2,
     )
