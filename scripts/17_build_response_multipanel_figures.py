@@ -82,13 +82,12 @@ def build_figure(name: str, title: str, subtitle: str, panels: list[dict], ncols
     panel_w, panel_h = panel_size
     margin = 70
     gap = 34
-    title_h = 120
+    title_h = 20
     footer_h = 0
     width = margin * 2 + ncols * panel_w + (ncols - 1) * gap
     height = margin + title_h + nrows * panel_h + (nrows - 1) * gap + footer_h
     canvas = Image.new("RGB", (width, height), "white")
     draw = ImageDraw.Draw(canvas)
-    draw.text((margin, margin - 10), title, font=TITLE_FONT, fill=(15, 23, 42))
     top = margin + title_h
     for idx, panel in enumerate(panels):
         row = idx // ncols
