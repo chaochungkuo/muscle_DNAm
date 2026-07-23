@@ -57,7 +57,7 @@ build_analysis_metadata <- function(bias, key, matrix_samples) {
   )] <- "patient_B2018.30786"
   joined$dataset_source <- ifelse(
     joined$sample_group == "Control", "MALICoT",
-    ifelse(joined$sample_group == "Multiminicores", "GEO GSE121961", "Institutional archive")
+      ifelse(joined$sample_group == "Multiminicores", "GEO GSE121961", "In-house data")
   )
   joined
 }

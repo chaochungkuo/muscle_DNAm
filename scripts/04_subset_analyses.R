@@ -7,7 +7,7 @@ metadata<-metadata[match(colnames(mVals),metadata$matrix_sample),]
 subsets<-list(
   excluding_MMC=metadata$sample_group!="Multiminicores",
   excluding_controls=metadata$sample_group!="Control",
-  institutional_archive=metadata$dataset_source=="Institutional archive",
+  in_house_data=metadata$dataset_source=="In-house data",
   IBM_vs_nonIBM_IIM=metadata$sample_group%in%c("IBM","PM"),
   ALS_vs_nonALS_NMA=metadata$sample_group%in%c("ALS","NMA")
 )

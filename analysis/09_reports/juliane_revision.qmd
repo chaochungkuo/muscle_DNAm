@@ -107,7 +107,7 @@ categories without a definition from the clinical team.
 All `r nrow(meta)` metadata rows map uniquely to 73 methylation samples from
 `r length(unique(meta$patient_id))` patients. Sentrix ID and array position match the
 sample key. Dataset source was explicitly assigned as MALICoT for controls, GEO
-GSE121961 for Multiminicores, and institutional archive for the remaining samples.
+GSE121961 for Multiminicores, and in-house data for the remaining samples.
 :::
 
 The `lymphomonocytes` field is reproduced exactly as supplied and used only as a
@@ -327,7 +327,7 @@ knitr::include_graphics(file.path(root,"figures/web/Figure_sample_correlation_he
 <div class="box-title">Reviewer request</div>
 
 Recompute PCA and t-SNE after excluding MMC, excluding controls, restricting to the
-institutional archive, comparing IBM with non-IBM IIM, NOS, and comparing ALS with
+in-house data, comparing IBM with non-IBM IIM, NOS, and comparing ALS with
 non-ALS NMA. Do not merely delete points from the full-cohort map, and assess
 sensitivity to influential individual samples.
 :::
@@ -347,7 +347,7 @@ names(subs_show)<-c("Subset","N","Groups","PCA silhouette","t-SNE silhouette")
 knitr::kable(subs_show,digits=3)
 ```
 
-The institutional-only analysis shows weaker separation than the full mixed-source
+The in-house-data analysis shows weaker separation than the full mixed-source
 cohort. ALS versus non-ALS NMA is the weakest clinically focused distinction: PCA
 silhouette is `r sprintf('%.3f',subs$PCA_disease_silhouette[subs$subset=='ALS_vs_nonALS_NMA'])`
 and t-SNE silhouette is

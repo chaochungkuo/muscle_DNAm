@@ -83,8 +83,8 @@ def figure_remark(name: str) -> str:
         return "Checks whether structure is driven by the MMC group."
     if stem.startswith("subset_excluding_controls"):
         return "Checks whether structure is driven by control samples."
-    if stem.startswith("subset_institutional_archive"):
-        return "Restricts the analysis to institutional archive samples."
+    if stem.startswith("subset_in_house_data"):
+        return "Restricts the analysis to in-house data."
     if stem.startswith("pca_scaled_by_"):
         variable = stem.replace("pca_scaled_by_", "").replace("_", " ")
         return f"Scaled PCA colored by {variable}; checks alignment with PCA structure."
@@ -181,10 +181,10 @@ INSTRUCTIONS = {
         "where": "Results sensitivity paragraph, Supplementary figures, Discussion limitations, rebuttal.",
         "change": [
             "State that PCA and t-SNE were recomputed within each requested subset, not merely subsetted from the full embedding.",
-            "Report that institutional-only and disease-pair analyses are weaker than the full mixed-source cohort.",
+            "Report that in-house-data and disease-pair analyses are weaker than the full mixed-source cohort.",
             "Use the influence analysis to justify cautious wording for small disease-pair contrasts.",
         ],
-        "wording": "PCA and t-SNE were recomputed independently after excluding MMC, excluding controls, restricting to institutional archive samples, comparing IBM with non-IBM IIM, NOS, and comparing ALS with non-ALS NMA. The subset analyses, especially ALS versus non-ALS NMA, support exploratory rather than definitive interpretation.",
+        "wording": "PCA and t-SNE were recomputed independently after excluding MMC, excluding controls, restricting to in-house data, comparing IBM with non-IBM IIM, NOS, and comparing ALS with non-ALS NMA. The subset analyses, especially ALS versus non-ALS NMA, support exploratory rather than definitive interpretation.",
         "owner": "Joseph.",
         "status": "Implemented analytically; wording needs final integration.",
     },
@@ -678,7 +678,7 @@ CHUNKS = [
         "title": "6. Subset and influential-sample analyses",
         "status": "Complete",
         "owner": "Joseph drafted; Juliane to approve wording",
-        "quote": "Re-run the t-SNE and PCA in subsets... excluding MMC; excluding controls; institutional archive samples only; IBM versus non-IBM IIM; ALS versus non-ALS NMA... assess whether the observed structure is sensitive to individual influential samples.",
+        "quote": "Re-run the t-SNE and PCA in subsets... excluding MMC; excluding controls; in-house data only; IBM versus non-IBM IIM; ALS versus non-ALS NMA... assess whether the observed structure is sensitive to individual influential samples.",
         "asking": [
             "The reviewer wants embeddings recomputed within each subset, not just points removed from the full-cohort map.",
             "They especially want clinically relevant contrasts tested for robustness.",
@@ -697,8 +697,8 @@ CHUNKS = [
             "subset_excluding_MMC_tSNE.pdf",
             "subset_excluding_controls_PCA.pdf",
             "subset_excluding_controls_tSNE.pdf",
-            "subset_institutional_archive_PCA.pdf",
-            "subset_institutional_archive_tSNE.pdf",
+            "subset_in_house_data_PCA.pdf",
+            "subset_in_house_data_tSNE.pdf",
             "subset_IBM_vs_nonIBM_IIM_PCA.pdf",
             "subset_IBM_vs_nonIBM_IIM_tSNE.pdf",
             "subset_ALS_vs_nonALS_NMA_PCA.pdf",
@@ -709,19 +709,19 @@ CHUNKS = [
             "The full-cohort pattern is stronger than some clinically focused subsets.",
             "ALS versus non-ALS NMA is the weakest comparison and should be framed as hypothesis-generating only.",
         ],
-        "draft": "We recomputed PCA and t-SNE independently for all requested subsets rather than removing samples from the full-cohort embedding. The institutional-only and disease-pair analyses show weaker structure than the full mixed-source cohort. ALS versus non-ALS neurogenic atrophy was the least stable comparison and was sensitive to individual samples; we therefore revised the manuscript to describe this contrast as exploratory.",
+        "draft": "We recomputed PCA and t-SNE independently for all requested subsets rather than removing samples from the full-cohort embedding. The in-house-data and disease-pair analyses show weaker structure than the full mixed-source cohort. ALS versus non-ALS neurogenic atrophy was the least stable comparison and was sensitive to individual samples; we therefore revised the manuscript to describe this contrast as exploratory.",
         "exact_edits": [
             {
                 "location": "Current clean draft: page 9, paragraph 63; Methods, array data analysis",
-                "find": "PCA and t-SNE were recomputed independently after excluding MMC, excluding controls, restricting to the institutional archive, comparing IBM with non-IBM IIM, NOS, and comparing ALS with non-ALS NMA.",
+                "find": "PCA and t-SNE were recomputed independently after excluding MMC, excluding controls, restricting to the in-house data, comparing IBM with non-IBM IIM, NOS, and comparing ALS with non-ALS NMA.",
                 "action": "Keep this Methods sentence; it is essential because the reviewer asked that subsets be recomputed, not only subsetted from the full embedding.",
-                "replacement": "PCA and t-SNE were recomputed independently after excluding MMC, excluding controls, restricting to the institutional archive, comparing IBM with non-IBM IIM, NOS, and comparing ALS with non-ALS NMA; these were new embeddings calculated within each subset, not visual subsets of the full-cohort embedding.",
+                "replacement": "PCA and t-SNE were recomputed independently after excluding MMC, excluding controls, restricting to the in-house data, comparing IBM with non-IBM IIM, NOS, and comparing ALS with non-ALS NMA; these were new embeddings calculated within each subset, not visual subsets of the full-cohort embedding.",
             },
             {
                 "location": "Current clean draft: Results, after the main unsupervised PCA/t-SNE paragraph",
                 "find": "No explicit subset-analysis result paragraph may be present yet.",
                 "action": "Add a short Results paragraph summarizing the subset and influential-sample analyses.",
-                "replacement": "Subset analyses showed that the full-cohort structure was stronger than several clinically focused subset analyses. The institutional-only, IBM versus non-IBM IIM, NOS, and ALS versus non-ALS NMA embeddings were less separated than the full mixed-source cohort, and the ALS versus non-ALS NMA comparison showed the greatest sensitivity to individual samples. These results support cautious, exploratory interpretation of disease-pair contrasts.",
+                "replacement": "Subset analyses showed that the full-cohort structure was stronger than several clinically focused subset analyses. The in-house-data, IBM versus non-IBM IIM, NOS, and ALS versus non-ALS NMA embeddings were less separated than the full mixed-source cohort, and the ALS versus non-ALS NMA comparison showed the greatest sensitivity to individual samples. These results support cautious, exploratory interpretation of disease-pair contrasts.",
             },
             {
                 "location": "Discussion section discussing ALS/NMA and cohort limitations",
@@ -733,7 +733,7 @@ CHUNKS = [
         "rebuttal_figures": [
             {
                 "where": "Reviewer 1 subset/influence response.",
-                "figure": "Supplementary subset figures: subset_excluding_MMC_*.pdf, subset_excluding_controls_*.pdf, subset_institutional_archive_*.pdf, subset_IBM_vs_nonIBM_IIM_*.pdf, subset_ALS_vs_nonALS_NMA_*.pdf",
+                "figure": "Supplementary subset figures: subset_excluding_MMC_*.pdf, subset_excluding_controls_*.pdf, subset_in_house_data_*.pdf, subset_IBM_vs_nonIBM_IIM_*.pdf, subset_ALS_vs_nonALS_NMA_*.pdf",
                 "reason": "Directly answers the request for recomputed PCA/t-SNE in each subset.",
                 "caption": "PCA and t-SNE recomputed independently within each requested subset.",
             },
@@ -1176,7 +1176,7 @@ Because of the points above, I believe stronger scrutiny of the data shown in th
 
 In this context, the apparently near-complete cluster separation is unexpected and requires careful demonstration that it is stable and not attributable to the structural distribution of potential confounders.
 
-For the primary t-SNE analysis and the sensitivity analyses above, please display the same coordinates with samples colored separately by potential confounder variables: dataset source (MALICoT controls, GEO, and the institutional archive), batch information (chip/array/Sentrix), age, sex, biopsy site, estimated inflammatory cell fraction (lymphocytes/macrophages), fiber type estimates, denervation estimates and pathology severity using an appropriate fibrosis/necrosis score. These annotations should be provided where variables are available or can be estimated using validated methods and would help determine whether the confounding variables explain or contribute significantly to the clustering.""",
+For the primary t-SNE analysis and the sensitivity analyses above, please display the same coordinates with samples colored separately by potential confounder variables: dataset source (MALICoT controls, GEO, and the in-house data), batch information (chip/array/Sentrix), age, sex, biopsy site, estimated inflammatory cell fraction (lymphocytes/macrophages), fiber type estimates, denervation estimates and pathology severity using an appropriate fibrosis/necrosis score. These annotations should be provided where variables are available or can be estimated using validated methods and would help determine whether the confounding variables explain or contribute significantly to the clustering.""",
     "tsne_pca_sensitivity": """The authors state in the rebuttal that they used the entire set of 771,381 probes for the t-SNE visualization using Rtsne(t(getM(mSetSq)), perplexity = 15, theta = 0.5, dims = 2). However, according to the official documentation for Rtsne, default parameters include pca = TRUE and initial_dims = 50. Thus, although the input comprises all probes and the procedure remains unsupervised, the t-SNE is actually calculated from the first 50 internally derived principal components rather than directly from the complete probe space. Those components may themselves be dominated by the technical and biological variables described above. This initial PCA step is standard and computationally reasonable, but it should be reported explicitly. Please include a direct analysis with pca = FALSE if computationally feasible. Please provide a systematic sensitivity analysis using several feasible values of initial_dims (for example, 10, 20, 30, 50, and 72), perplexities (for example, 5, 10, 15, and 20), and random seeds. Where possible, clustering stability should also be summarized quantitatively rather than assessed solely by visual inspection.""",
     "correlation_heatmap_figure1f": """Please provide a sample-to-sample correlation heatmap calculated from the full post-QC M-value matrix to determine whether the separation structure is visible in the original methylation data, since t-SNE prioritizes local neighborhood structure and does not preserve global distances. Samples should be hierarchically clustered using a prespecified correlation-based distance without using diagnostic labels to determine their ordering. Diagnosis and potential confounders should be added only as annotations at the end of the analysis.
 
@@ -1195,7 +1195,7 @@ levels = design)
 
 The authors then selected the top 500 ranked CpGs from each of these seven comparisons and plotted their union. This is a supervised analysis, and separation by diagnostic group is partly expected by construction and should not be presented as independent evidence that the samples cluster according to disease. If the authors meant to show the heatmap as a supervised descriptive visualization only, that should be clearly stated in the text and figure legend. If the heatmap was meant to further support the unsupervised clustering of the disease groups, it should be replaced or supplemented by the unsupervised sample-to-sample correlation heatmap described above.""",
     "pca_scrutiny": """The PCA analysis also requires more detailed evaluation. According to the available code, PCA was performed using prcomp(t(getM(mSetSq)), scale.=TRUE). Please provide a scree plot reporting the variance explained by at least the first 20 principal components together with cumulative variance explained, and show multiple pairwise projections, including PC1-PC2, PC1-PC3, PC2-PC3, and subsequent components where relevant. Evaluation limited to PC1 and PC2 may overlook technical or biological structure represented by other major components. The PCA coordinates should be displayed with samples colored separately by diagnostic group, dataset source, Sentrix/chip, biopsy site, sex, age, and available tissue-composition or histopathologic estimates, as requested for the t-SNE above. In addition to visual inspection, please quantify the association of each of the leading PCs with these variables,. This would help determine whether the variance represented by the principal components is more strongly associated with diagnosis or with technical and demographic structure. Because the analysis uses scale.=TRUE, each CpG is standardized to unit variance before PCA. Scaling hundreds of thousands of probes may give low-variance or noisy probes equal weighting with biologically variable probes. Please explain the rationale for the primary scaling approach, and provide an analysis using centered but unscaled M-values (scale.=FALSE). The authors should also examine the CpGs with the largest positive and negative loadings on the leading PCs to assess whether those components are associated with disease biology, batch, dataset source, age, sex, biopsy site, or tissue composition.""",
-    "subset_influence": """Re-run the t-SNE and PCA in subsets that remove the dominant or externally sourced groups and directly test the clinically relevant distinctions: (1) excluding MMC; (2) excluding controls; (3) institutional archive samples only; (4) IBM versus non-IBM IIM; and (5) ALS versus non-ALS NMA. These analyses should be recomputed within each subset rather than merely removing points from an embedding calculated from the complete cohort. Given the small group sizes, the authors should also assess whether the observed structure is sensitive to individual influential samples.""",
+    "subset_influence": """Re-run the t-SNE and PCA in subsets that remove the dominant or externally sourced groups and directly test the clinically relevant distinctions: (1) excluding MMC; (2) excluding controls; (3) in-house data only; (4) IBM versus non-IBM IIM; and (5) ALS versus non-ALS NMA. These analyses should be recomputed within each subset rather than merely removing points from an embedding calculated from the complete cohort. Given the small group sizes, the authors should also assess whether the observed structure is sensitive to individual influential samples.""",
     "downstream_validation": """The unsupervised analyses should be resolved before the downstream disease-specific claims can be interpreted confidently. The manuscript and letter of rebuttal appear to use the PCA and t-SNE findings as evidence that the methylation data contain an intrinsic structure corresponding to the diagnostic groups and then proceeds to identify differentially methylated CpGs, construct label-informed heatmaps and classifiers, and assign biological meaning to the resulting genes and pathways. If the apparent unsupervised separation is instead substantially driven by confounders, these same variables would also be expected to influence the subsequent supervised and differential analyses. Therefore, confirmation that the unsupervised structure is robust to these potential confounders is an important prerequisite for interpreting the downstream results as associated to disease groups. Even if the unsupervised findings are confirmed, the differential methylation and supervised-learning analyses will still require their own confounder validation.""",
     "supervised_wording": """On page 25, a newly added sentence states, "Next, we wanted to find out whether supervised learning can predict a correct diagnosis." Instead of "diagnosis," the correct term should be "disease group." Along the same lines, the abstract states, "Based on the CpG site methylation data, supervised learning, especially using logistic regression and random forest, even predicted diagnosis beyond disease group correctly in many cases." That's an overstatement again, since non-ALS is not a diagnosis, and neither is "non-IBM, NOS" (not to mention that other diseases that would normally be in the differential diagnosis have not yet been evaluated). Similar inconsistencies in replacing the prior "disease-specific" language with more general terms are present elsewhere in the paper, and should be corrected throughout to avoid overstatements.""",
     "inclusion_exclusion": """The inclusion and exclusion criteria are still not sufficiently detailed. For example, I would be very surprised if the authors' archive included only 6 cases of "non-IBM IIM, NOS" and just 13 cases of non-ALS NMA in the last 8 years. Assuming more cases were available, how were these specific cases selected among all others? Were all candidate cases within the 8-year period reviewed? Were slides reviewed before inclusion, or was inclusion based solely on the initial diagnosis/report? If the latter, how were differences among diagnosing pathologists controlled for? Was clinical information also evaluated, or was inclusion/exclusion based just on the histologic criteria? Etc, etc.""",

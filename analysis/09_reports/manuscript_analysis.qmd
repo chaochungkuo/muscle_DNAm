@@ -107,7 +107,7 @@ only after clustering.
 # Clinically relevant subsets and sample influence
 
 PCA and t-SNE were recomputed independently after excluding MMC, excluding controls,
-restricting to the institutional archive, comparing IBM with non-IBM IIM, NOS, and
+restricting to the in-house data, comparing IBM with non-IBM IIM, NOS, and
 comparing ALS with non-ALS NMA. These analyses are not obtained by deleting points
 from the full-cohort embedding.
 
