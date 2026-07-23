@@ -83,3 +83,4 @@ build-reviewer-workbook = "python scripts/15_build_reviewer_response_workbook.py
 build-juliane-compact-package = "python scripts/16_build_juliane_compact_package.py"
 build-response-multipanel-figures = "python scripts/17_build_response_multipanel_figures.py"
 build-rebuttal-docx = "python scripts/18_build_rebuttal_docx.py"
+build-manuscript-als-wording-draft = "python scripts/19_build_manuscript_als_wording_draft.py"
