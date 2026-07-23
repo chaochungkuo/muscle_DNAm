@@ -362,7 +362,7 @@ def main() -> None:
             panel("J", "subset_ALS_vs_nonALS_NMA_tSNE", "ALS vs non-ALS NMA — t-SNE", "Clinically focused neurogenic-atrophy comparison."),
         ],
         ncols=2,
-        panel_size=(1800, 1220),
+        panel_size=(1545, 878),
         show_panel_titles=False,
     )
     build_figure(
