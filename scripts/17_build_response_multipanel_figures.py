@@ -147,17 +147,15 @@ def main() -> None:
 
     build_figure(
         "Response_Figure_3_downstream_robustness",
-        "Response Figure 3. Downstream and ALS/NMA robustness checks",
-        "Summary panels for downstream confounder validation, leakage-fixed supervised learning and the exploratory ALS versus non-ALS NMA comparison.",
+        "Response Figure 3. Downstream robustness checks",
+        "Summary panels for downstream confounder validation and leakage-fixed supervised learning.",
         [
             panel("A", "Figure_differential_sensitivity", "Differential methylation sensitivity", "Covariate sensitivity shows which contrasts remain supported under estimable adjustments."),
             panel("B", "Figure_metadata_only_classifier", "Metadata-only classifier", "Metadata alone contains disease-group information, supporting cautious interpretation."),
             panel("C", "Figure_patient_aware_ML", "Patient-aware supervised learning", "Leakage-fixed classification is internal to this selected pilot cohort."),
-            panel("D", "subset_ALS_vs_nonALS_NMA_PCA", "ALS vs non-ALS NMA PCA", "Subset PCA shows overlap in the smallest clinically focused comparison."),
-            panel("E", "subset_ALS_vs_nonALS_NMA_tSNE", "ALS vs non-ALS NMA t-SNE", "Subset t-SNE supports exploratory rather than definitive ALS/NMA interpretation."),
-            panel("F", "influential_sample_analysis", "Influential samples", "Leave-one-sample checks show sensitivity in small disease-pair contrasts."),
         ],
-        ncols=2,
+        ncols=3,
+        panel_size=(1200, 1050),
     )
 
     metadata_panels = [
@@ -222,6 +220,18 @@ def main() -> None:
             panel("J", "subset_ALS_vs_nonALS_NMA_tSNE", "ALS vs non-ALS NMA — t-SNE", "Clinically focused neurogenic-atrophy subset."),
         ],
         ncols=2,
+    )
+    build_figure(
+        "Supplementary_Response_Figure_S5_ALS_NMA_robustness",
+        "Supplementary Response Figure S5. Exploratory ALS versus non-ALS NMA robustness",
+        "The ALS versus non-ALS NMA comparison was evaluated separately because it is the smallest clinically focused comparison and is sensitive to individual samples.",
+        [
+            panel("A", "subset_ALS_vs_nonALS_NMA_PCA", "ALS vs non-ALS NMA — PCA", "Subset PCA shows overlap in the smallest clinically focused comparison."),
+            panel("B", "subset_ALS_vs_nonALS_NMA_tSNE", "ALS vs non-ALS NMA — t-SNE", "Subset t-SNE supports exploratory rather than definitive ALS/NMA interpretation."),
+            panel("C", "influential_sample_analysis", "Influential samples", "Leave-one-sample checks show sensitivity in small disease-pair contrasts."),
+        ],
+        ncols=3,
+        panel_size=(1200, 1050),
     )
 
 

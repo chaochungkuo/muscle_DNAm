@@ -296,6 +296,7 @@ Use "in-house data" for the non-public sample subset, or delete the subset label
         [],
         [
             "Supplementary Response Figure S4 provides PCA and t-SNE recomputed independently within each requested subset, including the in-house-data subset and clinically focused ALS/non-ALS NMA and IBM/non-IBM IIM comparisons.",
+            "Supplementary Response Figure S5 focuses on the exploratory ALS versus non-ALS NMA robustness checks, including subset PCA/t-SNE and individual-sample influence analysis.",
         ],
     )
 
@@ -314,7 +315,7 @@ Revise downstream Results and Discussion to state that supervised learning suppo
         [
             (
                 "Response_Figure_3_downstream_robustness.png",
-                "Response Figure 3. Downstream robustness checks, including covariate-adjusted differential methylation where estimable, metadata-only classification, patient-aware supervised learning, ALS/non-ALS NMA subset plots and individual-sample influence analysis.",
+                "Response Figure 3. Downstream robustness checks, including covariate-adjusted differential methylation where estimable, metadata-only classification and patient-aware supervised learning. ALS/non-ALS NMA subset and influence analyses are provided separately in Supplementary Response Figure S5.",
             )
         ],
     )
