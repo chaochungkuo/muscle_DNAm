@@ -59,15 +59,19 @@ def draw_wrapped(draw: ImageDraw.ImageDraw, xy: tuple[int, int], text: str, fnt,
     return y
 
 
-def make_panel_card(panel: dict, width: int, height: int) -> Image.Image:
+def make_panel_card(panel: dict, width: int, height: int, show_panel_titles: bool = True) -> Image.Image:
     card = Image.new("RGB", (width, height), "white")
     draw = ImageDraw.Draw(card)
     pad = 26
     label_w = 58
     draw.text((pad, pad - 4), panel["label"], font=PANEL_FONT, fill=(20, 30, 45))
-    title_x = pad + label_w
-    draw.text((title_x, pad + 2), panel["title"], font=SUBTITLE_FONT, fill=(30, 41, 59))
-    image_box = (pad, 92, width - pad, height - 26)
+    if show_panel_titles:
+        title_x = pad + label_w
+        draw.text((title_x, pad + 2), panel["title"], font=SUBTITLE_FONT, fill=(30, 41, 59))
+        image_top = 92
+    else:
+        image_top = 54
+    image_box = (pad, image_top, width - pad, height - 26)
     img = load_image(panel["stem"])
     contained = ImageOps.contain(img, (image_box[2] - image_box[0], image_box[3] - image_box[1]), Image.Resampling.LANCZOS)
     x = image_box[0] + ((image_box[2] - image_box[0]) - contained.width) // 2
@@ -76,7 +80,15 @@ def make_panel_card(panel: dict, width: int, height: int) -> Image.Image:
     return card
 
 
-def build_figure(name: str, title: str, subtitle: str, panels: list[dict], ncols: int, panel_size=(1500, 1120)) -> None:
+def build_figure(
+    name: str,
+    title: str,
+    subtitle: str,
+    panels: list[dict],
+    ncols: int,
+    panel_size=(1500, 1120),
+    show_panel_titles: bool = True,
+) -> None:
     OUT.mkdir(parents=True, exist_ok=True)
     nrows = (len(panels) + ncols - 1) // ncols
     panel_w, panel_h = panel_size
@@ -94,7 +106,7 @@ def build_figure(name: str, title: str, subtitle: str, panels: list[dict], ncols
         col = idx % ncols
         x = margin + col * (panel_w + gap)
         y = top + row * (panel_h + gap)
-        canvas.paste(make_panel_card(panel, panel_w, panel_h), (x, y))
+        canvas.paste(make_panel_card(panel, panel_w, panel_h, show_panel_titles=show_panel_titles), (x, y))
     png = OUT / f"{name}.png"
     pdf = OUT / f"{name}.pdf"
     tiff = OUT / f"{name}.tiff"
@@ -332,6 +344,26 @@ def main() -> None:
             panel("J", "subset_ALS_vs_nonALS_NMA_tSNE", "ALS vs non-ALS NMA — t-SNE", "Clinically focused neurogenic-atrophy subset."),
         ],
         ncols=2,
+    )
+    build_figure(
+        "Response_Figure_subset_recomputed_PCA_tSNE",
+        "Reviewer-requested recomputed subset PCA and t-SNE analyses",
+        "Each PCA/t-SNE pair was recomputed within the indicated subset, not obtained by deleting samples from a full-cohort embedding.",
+        [
+            panel("A", "subset_excluding_MMC_PCA", "Excluding MMC — PCA", "Recomputed PCA after excluding MMC."),
+            panel("B", "subset_excluding_MMC_tSNE", "Excluding MMC — t-SNE", "Recomputed t-SNE after excluding MMC."),
+            panel("C", "subset_excluding_controls_PCA", "Excluding controls — PCA", "Recomputed PCA after excluding controls."),
+            panel("D", "subset_excluding_controls_tSNE", "Excluding controls — t-SNE", "Recomputed t-SNE after excluding controls."),
+            panel("E", "subset_in_house_data_PCA", "In-house data — PCA", "Recomputed PCA using non-public/non-GEO in-house data."),
+            panel("F", "subset_in_house_data_tSNE", "In-house data — t-SNE", "Recomputed t-SNE using non-public/non-GEO in-house data."),
+            panel("G", "subset_IBM_vs_nonIBM_IIM_PCA", "IBM vs non-IBM IIM — PCA", "Clinically focused inflammatory-myopathy comparison."),
+            panel("H", "subset_IBM_vs_nonIBM_IIM_tSNE", "IBM vs non-IBM IIM — t-SNE", "Clinically focused inflammatory-myopathy comparison."),
+            panel("I", "subset_ALS_vs_nonALS_NMA_PCA", "ALS vs non-ALS NMA — PCA", "Clinically focused neurogenic-atrophy comparison."),
+            panel("J", "subset_ALS_vs_nonALS_NMA_tSNE", "ALS vs non-ALS NMA — t-SNE", "Clinically focused neurogenic-atrophy comparison."),
+        ],
+        ncols=2,
+        panel_size=(1800, 1220),
+        show_panel_titles=False,
     )
     build_figure(
         "Supplementary_Response_Figure_S5_ALS_NMA_robustness",
