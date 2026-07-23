@@ -64,7 +64,6 @@ def make_panel_card(panel: dict, width: int, height: int) -> Image.Image:
     draw = ImageDraw.Draw(card)
     pad = 26
     label_w = 58
-    draw.rounded_rectangle((0, 0, width - 1, height - 1), radius=20, outline=(210, 216, 226), width=2)
     draw.text((pad, pad - 4), panel["label"], font=PANEL_FONT, fill=(20, 30, 45))
     title_x = pad + label_w
     draw.text((title_x, pad + 2), panel["title"], font=SUBTITLE_FONT, fill=(30, 41, 59))
@@ -75,7 +74,6 @@ def make_panel_card(panel: dict, width: int, height: int) -> Image.Image:
     x = image_box[0] + ((image_box[2] - image_box[0]) - contained.width) // 2
     y = image_box[1] + ((image_box[3] - image_box[1]) - contained.height) // 2
     card.paste(contained, (x, y))
-    draw.line((pad, caption_top - 6, width - pad, caption_top - 6), fill=(226, 232, 240), width=2)
     draw_wrapped(draw, (pad, caption_top + 4), panel["caption"], CAPTION_FONT, width=max(45, width // 28), line_spacing=5)
     return card
 
