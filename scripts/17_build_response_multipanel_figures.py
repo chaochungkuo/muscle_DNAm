@@ -170,6 +170,14 @@ def main() -> None:
         ("city_of_origin", "City"),
         ("lymphomonocytes", "Lymphomonocytes"),
     ]
+    tsne_metadata_panels = [
+        ("display_group", "Disease group"),
+        ("sentrix_id", "Sentrix ID"),
+        ("age_group", "Age group"),
+        ("gender", "Sex"),
+        ("muscle_location_group", "Biopsy site"),
+        ("city_of_origin", "City"),
+    ]
     build_figure(
         "Supplementary_Response_Figure_S1_PCA_metadata_coloring",
         "Supplementary Response Figure S1. PCA colored by available metadata",
@@ -186,7 +194,7 @@ def main() -> None:
         "The same baseline t-SNE coordinates are recolored by each available metadata variable requested by the reviewer, allowing direct visual comparison of disease group with source, Sentrix ID, demographic variables, biopsy site, city and supplied lymphomonocyte category.",
         [
             panel(chr(65 + i), f"tsne_baseline_by_{stem}", title, "Same t-SNE coordinates; only the color annotation changes.")
-            for i, (stem, title) in enumerate(metadata_panels)
+            for i, (stem, title) in enumerate(tsne_metadata_panels)
         ],
         ncols=2,
     )
