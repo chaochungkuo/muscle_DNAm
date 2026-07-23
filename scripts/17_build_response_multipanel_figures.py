@@ -165,6 +165,53 @@ def build_heatmap_with_legend_source() -> None:
     canvas.save(response_stem.with_suffix(".pdf"), "PDF", resolution=300.0)
     canvas.save(response_stem.with_suffix(".tiff"), compression="tiff_lzw", dpi=(300, 300))
 
+    # Alternative manuscript-friendly single-panel layout: heatmap above,
+    # annotation legend below. This avoids an overly wide figure in Word/PDF.
+    below_w = 2200
+    below_h = 2400
+    below_margin = 45
+    below_gap = 45
+    below_label_h = 60
+    heat_box_h = 1450
+    legend_box_h = below_h - (2 * below_margin + below_label_h + heat_box_h + below_gap)
+    below = Image.new("RGB", (below_w, below_h), "white")
+    below_draw = ImageDraw.Draw(below)
+    below_draw.text((below_margin, below_margin), "D", font=PANEL_FONT, fill=(20, 30, 45))
+    below_draw.text((below_margin + 62, below_margin + 4), "Full-matrix correlation heatmap with annotation legend", font=SUBTITLE_FONT, fill=(30, 41, 59))
+
+    heat_top = below_margin + below_label_h
+    heat_contained = ImageOps.contain(
+        heatmap,
+        (below_w - 2 * below_margin, heat_box_h),
+        Image.Resampling.LANCZOS,
+    )
+    below.paste(
+        heat_contained,
+        (
+            below_margin + ((below_w - 2 * below_margin) - heat_contained.width) // 2,
+            heat_top + (heat_box_h - heat_contained.height) // 2,
+        ),
+    )
+
+    legend_top = heat_top + heat_box_h + below_gap
+    legend_contained = ImageOps.contain(
+        legend,
+        (below_w - 2 * below_margin, legend_box_h),
+        Image.Resampling.LANCZOS,
+    )
+    below.paste(
+        legend_contained,
+        (
+            below_margin + ((below_w - 2 * below_margin) - legend_contained.width) // 2,
+            legend_top + (legend_box_h - legend_contained.height) // 2,
+        ),
+    )
+
+    below_stem = OUT / "Response_Figure_1D_sample_correlation_heatmap_legend_below"
+    below.save(below_stem.with_suffix(".png"), optimize=True)
+    below.save(below_stem.with_suffix(".pdf"), "PDF", resolution=300.0)
+    below.save(below_stem.with_suffix(".tiff"), compression="tiff_lzw", dpi=(300, 300))
+
 
 def main() -> None:
     build_heatmap_with_legend_source()
