@@ -110,7 +110,65 @@ def panel(label: str, stem: str, title: str, caption: str) -> dict:
     return {"label": label, "stem": stem, "title": title, "caption": caption}
 
 
+def trim_whitespace(img: Image.Image, threshold: int = 248, pad: int = 12) -> Image.Image:
+    gray = img.convert("L")
+    mask = gray.point(lambda p: 0 if p > threshold else 255)
+    bbox = mask.getbbox()
+    if bbox is None:
+        return img
+    left, top, right, bottom = bbox
+    left = max(0, left - pad)
+    top = max(0, top - pad)
+    right = min(img.width, right + pad)
+    bottom = min(img.height, bottom + pad)
+    return img.crop((left, top, right, bottom))
+
+
+def build_heatmap_with_legend_source() -> None:
+    """Create a reusable heatmap+legend source panel with extra legend space."""
+    heatmap = trim_whitespace(load_image("Figure_sample_correlation_heatmap"), threshold=252, pad=18)
+    legend = trim_whitespace(load_image("Figure_sample_correlation_annotation_legend"), threshold=252, pad=18)
+    out_dir = FIG / "web"
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    width = 3000
+    height = 1650
+    margin = 30
+    gap = 70
+    label_h = 82
+    left_w = 1760
+    right_w = width - (2 * margin + gap + left_w)
+    canvas = Image.new("RGB", (width, height), "white")
+    draw = ImageDraw.Draw(canvas)
+
+    draw.text((margin, margin), "D", font=PANEL_FONT, fill=(20, 30, 45))
+    draw.text((margin + 62, margin + 4), "Full-matrix correlation heatmap", font=SUBTITLE_FONT, fill=(30, 41, 59))
+    x2 = margin + left_w + gap
+    draw.text((x2, margin), "E", font=PANEL_FONT, fill=(20, 30, 45))
+    draw.text((x2 + 62, margin + 4), "Annotation legend", font=SUBTITLE_FONT, fill=(30, 41, 59))
+
+    top = margin + label_h
+    panel_h = height - top - margin
+    heat = ImageOps.contain(heatmap, (left_w, panel_h), Image.Resampling.LANCZOS)
+    leg = ImageOps.contain(legend, (right_w, panel_h), Image.Resampling.LANCZOS)
+    canvas.paste(heat, (margin + (left_w - heat.width) // 2, top + (panel_h - heat.height) // 2))
+    canvas.paste(leg, (x2 + (right_w - leg.width) // 2, top + (panel_h - leg.height) // 2))
+
+    stem = out_dir / "Figure_sample_correlation_heatmap_with_legend"
+    canvas.save(stem.with_suffix(".png"), optimize=True)
+    canvas.save(stem.with_suffix(".pdf"), "PDF", resolution=300.0)
+    canvas.save(stem.with_suffix(".tiff"), compression="tiff_lzw", dpi=(300, 300))
+
+    response_stem = OUT / "Response_Figure_1DE_sample_correlation_heatmap_with_legend"
+    OUT.mkdir(parents=True, exist_ok=True)
+    canvas.save(response_stem.with_suffix(".png"), optimize=True)
+    canvas.save(response_stem.with_suffix(".pdf"), "PDF", resolution=300.0)
+    canvas.save(response_stem.with_suffix(".tiff"), compression="tiff_lzw", dpi=(300, 300))
+
+
 def main() -> None:
+    build_heatmap_with_legend_source()
+
     build_figure(
         "Response_Figure_1_unsupervised_structure",
         "Response Figure 1. Unsupervised methylation structure and cohort variables",
@@ -119,8 +177,7 @@ def main() -> None:
             panel("A", "Figure_unsupervised_PCA", "Baseline PCA", "Scaled PCA shows broad group-associated methylation structure."),
             panel("B", "Figure_unsupervised_tSNE", "Baseline t-SNE", "t-SNE visualizes local neighborhood structure among the studied groups."),
             panel("C", "Figure_PC_metadata_associations", "PC–metadata associations", "Leading PCs associate with disease group and with available cohort variables."),
-            panel("D", "Figure_sample_correlation_heatmap", "Full-matrix correlation heatmap", "Label-free sample clustering from all post-QC M-values."),
-            panel("E", "Figure_sample_correlation_annotation_legend", "Annotation legend", "Color key for disease group, source, Sentrix and other annotation tracks."),
+            panel("D", "Figure_sample_correlation_heatmap_with_legend", "Correlation heatmap and legend", "Label-free sample clustering from all post-QC M-values with annotation legend."),
         ],
         ncols=2,
     )
