@@ -1,0 +1,10 @@
+figure_stem	role	recommended_location	purpose
+Figure_unsupervised_PCA	primary	main_or_supplement	Full post-QC scaled PCA colored by disease group
+Figure_unsupervised_tSNE	primary	main_or_supplement	Baseline Rtsne with internal 50-PC step
+Figure_tSNE_direct_pca_false	primary_sensitivity	supplement	Direct full-matrix t-SNE requested by reviewer
+Figure_PCA_scree	primary_sensitivity	supplement	Scaled and unscaled PCA variance comparison
+Figure_PC_metadata_associations	primary_bias_check	main_or_supplement	Quantitative association of leading PCs with supplied metadata
+Figure_tSNE_stability	primary_bias_check	supplement	t-SNE parameter and seed stability
+Figure_sample_correlation_heatmap	primary_unsupervised	main	Label-free full-matrix sample correlation heatmap
+Figure_differential_sensitivity	primary_downstream	main_or_supplement	Adjusted versus unadjusted differential methylation robustness
+Figure_metadata_only_classifier	primary_downstream	main_or_supplement	Disease-group predictability from metadata alone

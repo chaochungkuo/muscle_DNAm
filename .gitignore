@@ -6,6 +6,7 @@
 .RDS
 *.rds
 *.RData
+.Renviron
 
 # Python
 __pycache__/
@@ -37,6 +38,29 @@ figures/
 output/
 plots/
 tables/
+reports/
+logs/
+
+# Pixi environment (pixi.lock remains tracked)
+.pixi/
+
+# Machine-specific configuration
+config/paths.local.yml
+
+# Raw, external, and derived data
+data/raw/
+data/external/
+data/derived/
+data/idats/
+*.idat
+*.IDAT
+*.pkl
+*.joblib
+
+# Private or not-yet-approved metadata
+metadata/private/
+metadata/*private*
+metadata/*confidential*
 
 # ML notebook generated files
 analysis/07_ml/outputs/

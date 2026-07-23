@@ -1,0 +1,8 @@
+# Copy to paths.local.yml and edit for your machine. The local file is ignored.
+project_data_root: /path/to/project
+idat_dir: /path/to/project/data/idats
+sample_sheet: /path/to/project/data/samplesheet.csv
+bias_metadata: /path/to/project/manuscripts/Table_1_bias_check_anonymous.xlsx
+processed_m_values: /path/to/project/analysis/DNAmArray/processed_mVals.csv
+processed_beta_values: /path/to/project/analysis/DNAmArray/processed_bVals.csv
+external_mmc_dir: /path/to/external/mmc

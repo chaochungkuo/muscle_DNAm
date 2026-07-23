@@ -1,0 +1,579 @@
+---
+title: "Reviewer-round revision guide for Juliane"
+subtitle: "Reviewer concerns, agreed decisions, analyses, and manuscript actions"
+author: "Chao-Chung Kuo"
+date: today
+format:
+  html:
+    toc: true
+    toc-depth: 3
+    toc-location: left
+    code-fold: true
+    embed-resources: true
+    theme: cosmo
+    css: report.css
+    page-layout: full
+    smooth-scroll: true
+execute:
+  echo: false
+  warning: false
+  message: false
+---
+
+```{r}
+root<-normalizePath("../..")
+tab<-function(x)read.delim(file.path(root,x),check.names=FALSE)
+meta<-tab("results/tables/analysis_metadata.tsv")
+assoc<-tab("results/tables/pc_metadata_associations.tsv")
+sens<-tab("results/tables/tsne_sensitivity_summary.tsv")
+subs<-tab("results/tables/subset_analysis_summary.tsv")
+audit<-tab("results/tables/differential_design_estimability.tsv")
+dm<-tab("results/tables/differential_confounder_sensitivity.tsv")
+ml<-tab("results/tables/metadata_only_classifier.tsv")
+pml<-tab("results/tables/patient_aware_ml_metrics.tsv")
+pblock<-tab("results/tables/patient_block_correlation.tsv")
+tsne_direct<-tab("results/tables/tsne_direct_pca_false_metrics.tsv")
+tsne_runtime<-tab("results/tables/tsne_direct_pca_false_runtime.tsv")
+sens_agg<-aggregate(cbind(procrustes_correlation,disease_silhouette)~initial_dims+perplexity,sens,mean)
+```
+
+# Executive Summary
+
+- **The requested analyses have been completed without removing samples.** Juliane's
+  revised Excel table was used as the authoritative metadata source for all 73 samples
+  from 72 patients. The internal `PM` label is displayed as **non-IBM IIM, NOS**.
+- **The methylation data contain strong disease-group-associated structure, but the
+  study design does not allow that structure to be attributed to disease alone.**
+  Disease group, Sentrix, source/city, biopsy site, age, and sex are structurally
+  overlapping. Source and Sentrix cannot be adjusted jointly with disease group in a
+  full model because those designs are rank deficient.
+- **The main unsupervised observation can remain, with narrower wording.** PCA and
+  many t-SNE settings preserve group-associated structure, but exact t-SNE geometry
+  varies and the weakest clinically relevant comparison is ALS versus non-ALS NMA.
+  These are pilot, association-level findings rather than proof of disease-specific
+  molecular entities or clinical diagnostic performance.
+- **Several answers still require Juliane's clinical knowledge.** Archive case
+  selection, slide/clinical review, the definition of `lymphomonocytes`, and the
+  availability of validated tissue-composition/pathology measures cannot be answered
+  from the analytical files and have not been guessed.
+
+::: {.reader-guide}
+<div class="box-title">How to use this report</div>
+
+Each analytical section follows the same path: **reviewer concern → Juliane's email
+or agreed team direction → completed response → interpretation and manuscript
+consequence**. Red boxes summarize the concern, blue boxes record the decision,
+green boxes describe completed work, and yellow boxes identify text or facts that
+still need Juliane's decision.
+:::
+
+# Revision map: what each reviewer concern led to
+
+| Reviewer concern | Where it is answered | Current disposition |
+|---|---|---|
+| Near-complete PCA/t-SNE separation may reflect confounding | Sections 2–4 | Recolored coordinates, quantitative PCA associations, t-SNE sensitivity, direct `pca=FALSE` analysis |
+| Batch, demographic, biopsy-site, and tissue-composition structure | Sections 1–3 and 7 | Available metadata analyzed; unavailable pathology variables explicitly bounded |
+| Need a label-free full-matrix check | Section 5 | Pearson correlation heatmap created without label-informed ordering |
+| Recompute clinically relevant subsets and test influential samples | Section 6 | Five subsets recomputed; leave-one-out influence analysis completed |
+| Figure 1F is supervised and potentially misleading | Section 5 | Replace/supplement it with label-free heatmap; relabel old panel as supervised descriptive |
+| Downstream differential and ML results may inherit confounding | Sections 7–8 | Adjustment sensitivity, estimability audit, metadata-only prediction, and patient-aware split completed |
+| ALS sample size and diagnostic wording are overinterpreted | Sections 6, 8, and 9 | ALS–NMA described as exploratory; diagnosis/entity language removed or softened |
+| Inclusion criteria and missing cell-composition information | Sections 1 and 9 | Requires Juliane's clinical/pathology response |
+
+# 1. The metadata are complete for analysis, but not for every clinical question
+
+::: {.reviewer-box}
+<div class="box-title">Relevant reviewer concerns</div>
+
+Reviewer 1 requested coloring and adjustment by dataset source, Sentrix/chip, age,
+sex, biopsy site, inflammatory-cell fraction, fiber type, denervation, fibrosis,
+necrosis, and pathology severity. Reviewer 2 separately asked how archive cases were
+selected and whether cellular composition was addressed by deconvolution or stated
+as a major limitation.
+:::
+
+::: {.decision-box}
+<div class="box-title">Juliane's email and agreed team direction</div>
+
+Use the categories in Juliane's new Excel table. Retain all 73 samples; there are no
+additional samples and no disease-group reassignment. Display `PM` as **non-IBM IIM,
+NOS**. Do not assign a biological meaning to the `lymphomonocytes` low/medium/high
+categories without a definition from the clinical team.
+:::
+
+::: {.response-box}
+<div class="box-title">Completed analytical response</div>
+
+All `r nrow(meta)` metadata rows map uniquely to 73 methylation samples from
+`r length(unique(meta$patient_id))` patients. Sentrix ID and array position match the
+sample key. Dataset source was explicitly assigned as MALICoT for controls, GEO
+GSE121961 for Multiminicores, and in-house data for the remaining samples.
+:::
+
+The `lymphomonocytes` field is reproduced exactly as supplied and used only as a
+descriptive annotation. It is not interpreted and is not included as an adjustment
+covariate. Validated macrophage fraction, fiber-type estimates, denervation score,
+fibrosis, necrosis, and pathology-severity measures were not supplied; they were not
+invented or imputed.
+
+::: {.decision-needed-box}
+<div class="box-title">Juliane decision needed</div>
+
+Please provide the clinical wording for: the total archive candidates and exclusions;
+whether all cases in the eight-year interval were reviewed; whether slides and
+clinical information were reassessed; how differences between diagnosing
+pathologists were handled; what `lymphomonocytes` means; and why the requested
+validated tissue-composition/pathology estimates are unavailable. The analysis can
+support a major-limitation statement, but cannot supply these facts.
+:::
+
+# 2. Recoloring shows why disease and confounding cannot be separated visually
+
+::: {.reviewer-box}
+<div class="box-title">Reviewer concern</div>
+
+The near-complete separation is unexpectedly strong for 73 heterogeneous,
+non-neoplastic muscle samples. The reviewer asked whether the same PCA and t-SNE
+coordinates align with source, batch, age, sex, biopsy site, or tissue composition.
+:::
+
+::: {.decision-box}
+<div class="box-title">Juliane's proposed response</div>
+
+Display the categories in the supplied Excel file on the existing PCA and t-SNE
+coordinates. Variables that are unavailable or undefined should not be inferred.
+:::
+
+::: {.response-box}
+<div class="box-title">Completed solution</div>
+
+The original unsupervised coordinates were preserved and recolored separately by
+disease group, city, Sentrix, age, sex, muscle site, and `lymphomonocytes`. Full
+single-variable panels are available in the supplementary-figure folder.
+:::
+
+**How to read these figures.** Each panel contains the same samples at the same
+coordinates; only the color annotation changes. If a disease cluster is also almost
+entirely one source, Sentrix, age group, sex, or biopsy site, the plot cannot tell us
+which of those overlapping variables generated the separation. Recoloring diagnoses
+the study-design overlap; it does not statistically remove it.
+
+```{r, out.width='100%', fig.show='asis'}
+knitr::include_graphics(c(file.path(root,"figures/web/Figure_unsupervised_PCA.png"),
+  file.path(root,"figures/web/Figure_unsupervised_tSNE.png")))
+```
+
+**Manuscript consequence.** Retain “disease-group-associated methylation structure,”
+but avoid “intrinsic,” “disease-specific,” or causal wording. State that technical,
+demographic, biopsy-site, and bulk-tissue effects cannot be fully separated.
+
+# 3. PCA confirms strong structure and simultaneously exposes confounding
+
+::: {.reviewer-box}
+<div class="box-title">Reviewer request</div>
+
+Provide a scree plot and cumulative variance, examine several PC pairs, quantify
+associations between leading PCs and the supplied variables, compare scaled with
+centered-unscaled PCA, and inspect the strongest positive and negative CpG loadings.
+:::
+
+::: {.response-box}
+<div class="box-title">Completed solution</div>
+
+Scaled and centered-unscaled PCA were run on the complete post-QC matrix. The first
+20 PCs and cumulative variance, multiple PC projections, PC–metadata association
+statistics, and annotated leading loadings were generated. The detailed PC-pair and
+loading panels are in the supplementary figures and machine-readable tables.
+:::
+
+**How to read the scree plot.** The bars show the fraction of total variation assigned
+to each PC; the cumulative line shows how quickly those fractions accumulate. PCA is
+not a disease test: it identifies the strongest directions of variation, regardless
+of whether their origin is biological, technical, demographic, or compositional.
+
+```{r, out.width='100%'}
+knitr::include_graphics(file.path(root,"figures/web/Figure_PCA_scree.png"))
+```
+
+**How to read the association map.** The color represents eta-squared: larger values
+mean that samples with different metadata categories occupy more distinct positions
+along that PC. It is a one-variable association and must not be read as an independent
+causal contribution when variables overlap.
+
+```{r, out.width='100%'}
+knitr::include_graphics(file.path(root,"figures/web/Figure_PC_metadata_associations.png"))
+```
+
+On scaled PC1, disease-group eta-squared is
+`r sprintf('%.3f',assoc$eta_squared[assoc$PCA=='scaled' & assoc$PC=='PC1' & assoc$variable=='display_group'])`.
+However, Sentrix eta-squared is also
+`r sprintf('%.3f',assoc$eta_squared[assoc$PCA=='scaled' & assoc$PC=='PC1' & assoc$variable=='sentrix_id'])`
+on PC1 and
+`r sprintf('%.3f',assoc$eta_squared[assoc$PCA=='scaled' & assoc$PC=='PC2' & assoc$variable=='sentrix_id'])`
+on PC2; city/source and biopsy site also associate with leading PCs. The similar
+disease pattern in scaled and unscaled PCA supports the presence of strong structure,
+but does not resolve its cause.
+
+::: {.interpretation-box}
+<div class="box-title">Interpretation for the manuscript</div>
+
+The correct conclusion is not “PCA validates the disease entities.” It is: **PCA
+detects strong group-associated structure, and the same leading components are also
+associated with technical and cohort variables that overlap with disease group.**
+:::
+
+# 4. t-SNE is broadly suggestive, but its exact map is parameter-dependent
+
+::: {.reviewer-box}
+<div class="box-title">Reviewer request</div>
+
+Explicitly report that the submitted `Rtsne` run used its default internal PCA with
+50 dimensions; test `initial_dims` 10, 20, 30, 50, and 72, perplexities 5, 10, 15,
+and 20, multiple random seeds, and quantitative stability. Also run `pca=FALSE`
+directly on the full probe matrix if feasible.
+:::
+
+::: {.response-box}
+<div class="box-title">Completed solution</div>
+
+The baseline is now described correctly as t-SNE operating after a 50-dimensional
+internal centered, unscaled PCA. A grid of `r nrow(sens)` runs tested five initial
+dimensions, four perplexities, and ten random seeds. Similarity to the submitted map
+was summarized by Procrustes correlation after removing irrelevant rotation,
+reflection, and orientation differences.
+:::
+
+**Plain-language explanation.** `initial_dims` controls how much PCA information is
+given to t-SNE; perplexity controls the approximate neighborhood scale; and the random
+seed changes the algorithm's starting arrangement. A Procrustes correlation near 1
+means that the samples preserve a very similar relative layout after the two maps are
+aligned. A wider or lower box means that the displayed geometry depends more strongly
+on random initialization or parameter choice.
+
+```{r, out.width='100%'}
+knitr::include_graphics(file.path(root,"figures/web/Figure_tSNE_stability.png"))
+```
+
+Across individual runs, Procrustes correlations ranged from
+`r sprintf('%.3f',min(sens$procrustes_correlation))` to
+`r sprintf('%.3f',max(sens$procrustes_correlation))`. After averaging the ten seeds
+within each parameter combination, the range was
+`r sprintf('%.3f',min(sens_agg$procrustes_correlation))` to
+`r sprintf('%.3f',max(sens_agg$procrustes_correlation))`. Perplexity 20 was generally
+the most stable. Disease-group silhouette values remained positive, meaning that
+some local group separation persisted, but its strength and exact shape varied.
+
+**The direct full-matrix check addresses the PCA-default question.** With `pca=FALSE`,
+t-SNE used the full 771,381-probe input and completed in approximately
+`r sprintf('%.2f',tsne_runtime$elapsed_minutes)` minutes. Its Procrustes correlation
+with the submitted map was `r sprintf('%.3f',tsne_direct$procrustes_correlation)` and
+its disease-group silhouette was `r sprintf('%.3f',tsne_direct$disease_silhouette)`.
+
+```{r, out.width='100%'}
+knitr::include_graphics(file.path(root,"figures/web/Figure_tSNE_direct_pca_false.png"))
+```
+
+::: {.interpretation-box}
+<div class="box-title">Interpretation for the manuscript</div>
+
+Many settings preserve local group-associated structure, so the original pattern is
+not a single-seed accident. However, the precise cluster shape, spacing, and relative
+placement are not fixed. t-SNE axes and global inter-cluster distances have no direct
+biological meaning and should not be used to define disease entities.
+:::
+
+# 5. The new correlation heatmap supplies the label-free check requested by the reviewer
+
+::: {.reviewer-box}
+<div class="box-title">Reviewer concern and requested remedy</div>
+
+The original Figure 1F selected CpGs using disease labels, so separation is partly
+expected by construction. It cannot serve as independent unsupervised evidence. The
+reviewer requested a full-matrix sample correlation heatmap with label-free ordering
+and diagnosis/confounders added only after clustering.
+:::
+
+::: {.decision-box}
+<div class="box-title">Proposed figure decision</div>
+
+Use the new label-free sample correlation heatmap as the main unsupervised heatmap.
+Move the original top-CpG heatmap to the supplement, or retain it only with an explicit
+“supervised descriptive visualization” label.
+:::
+
+::: {.response-box}
+<div class="box-title">Completed solution</div>
+
+Pearson correlations were calculated between every pair of samples using the complete
+post-QC M-value matrix. Hierarchical clustering used `1 − Pearson correlation` without
+disease labels. Disease and available metadata were added only as annotations after
+the row and column order had been determined.
+:::
+
+**How to read the figure.** Blocks of higher sample-to-sample correlation indicate
+similar methylation profiles in the original high-dimensional matrix. The annotation
+tracks show whether those blocks coincide with disease group, source, Sentrix, or
+other supplied variables. Because the ordering is label-free, the heatmap is an
+appropriate independent companion to PCA and t-SNE; it still cannot distinguish
+disease from perfectly or strongly aligned confounders.
+
+```{r, out.width='100%'}
+knitr::include_graphics(file.path(root,"figures/web/Figure_sample_correlation_heatmap.png"))
+```
+
+# 6. Subset analyses weaken the broadest claims, especially for ALS versus NMA
+
+::: {.reviewer-box}
+<div class="box-title">Reviewer request</div>
+
+Recompute PCA and t-SNE after excluding MMC, excluding controls, restricting to the
+in-house data, comparing IBM with non-IBM IIM, NOS, and comparing ALS with
+non-ALS NMA. Do not merely delete points from the full-cohort map, and assess
+sensitivity to influential individual samples.
+:::
+
+::: {.response-box}
+<div class="box-title">Completed solution</div>
+
+All five PCA and t-SNE analyses were recomputed independently from each subset. The
+summary below reports group-separation silhouette values; higher positive values mean
+stronger separation, values near zero mean overlapping groups. Leave-one-out influence
+analyses and complete panels are available in the supplementary figures.
+:::
+
+```{r}
+subs_show<-subs[,c("subset","n","groups","PCA_disease_silhouette","TSNE_disease_silhouette")]
+names(subs_show)<-c("Subset","N","Groups","PCA silhouette","t-SNE silhouette")
+knitr::kable(subs_show,digits=3)
+```
+
+The in-house-data analysis shows weaker separation than the full mixed-source
+cohort. ALS versus non-ALS NMA is the weakest clinically focused distinction: PCA
+silhouette is `r sprintf('%.3f',subs$PCA_disease_silhouette[subs$subset=='ALS_vs_nonALS_NMA'])`
+and t-SNE silhouette is
+`r sprintf('%.3f',subs$TSNE_disease_silhouette[subs$subset=='ALS_vs_nonALS_NMA'])`.
+
+::: {.interpretation-box}
+<div class="box-title">Manuscript consequence</div>
+
+Describe ALS–NMA findings as **exploratory and hypothesis-generating**, explicitly
+cite the six ALS cases, and avoid language implying a validated ALS methylation
+signature. The IBM versus non-IBM IIM result may be retained as a pilot association,
+with the same confounding and sample-size caveats.
+:::
+
+# 7. Differential methylation is sensitive to adjustment and cannot absorb all confounders
+
+::: {.reviewer-box}
+<div class="box-title">Reviewer concern</div>
+
+If unsupervised separation is influenced by confounders, differential methylation,
+pathways, label-informed heatmaps, and classifiers may inherit the same structure.
+Reviewer 2 additionally requested cell-composition adjustment or an explicit major
+limitation if validated deconvolution is not available.
+:::
+
+::: {.response-box}
+<div class="box-title">Completed solution</div>
+
+Differential models were rerun unadjusted, adjusted for age and sex, and adjusted for
+biopsy site. Model estimability was audited before interpreting results. The repeated
+patient could not support a general within-patient correlation estimate because only
+one patient was repeated, so each paired specimen was excluded in turn as a sensitivity
+check.
+:::
+
+```{r}
+audit_show<-audit
+names(audit_show)<-c("Model","N","Parameters","Rank","Full rank","Residual df")
+knitr::kable(audit_show)
+```
+
+Source and Sentrix models are not full rank with disease group. In plain language,
+some disease categories and technical/source categories overlap so strongly that the
+model cannot estimate separate coefficients for both. Normalization cannot repair
+this structural imbalance.
+
+**How to read the sensitivity figure.** The panels compare how many CpGs remain
+significant, how strongly effect sizes agree with the unadjusted analysis, and how
+many of the top-ranked CpGs are retained. Large changes after adjustment indicate
+that the biological interpretation depends on the covariate model.
+
+```{r, out.width='100%'}
+knitr::include_graphics(file.path(root,"figures/web/Figure_differential_sensitivity.png"))
+```
+
+Biopsy-site adjustment reduced ALS-versus-NMA CpGs at FDR < 0.001 from two to zero.
+MMC-versus-control changed especially strongly after age/sex adjustment: significant
+CpGs decreased from 103,209 to 531 and top-1,000 overlap was 0.077. Pathway claims
+based on unstable CpG sets should therefore be softened and presented as sensitivity-
+dependent exploratory findings.
+
+::: {.decision-needed-box}
+<div class="box-title">Juliane decision needed</div>
+
+Because no validated cell fractions or pathology scores were supplied, the response
+should explicitly identify absent cell-composition adjustment as a **major limitation**
+unless Juliane can provide a defensible validated estimate and its provenance.
+:::
+
+# 8. Supervised learning remains a research result, not a clinical diagnostic claim
+
+::: {.reviewer-box}
+<div class="box-title">Relevant reviewer concerns</div>
+
+Reviewer 1 asked whether supervised models inherit source/batch structure. Reviewer 2
+objected to “predict a correct diagnosis” and similar language because the outcomes
+are study disease groups, not a complete clinical differential diagnosis.
+:::
+
+::: {.response-box}
+<div class="box-title">Completed solution</div>
+
+A metadata-only model quantified how much disease-group information is already
+contained in the supplied covariates. The methylation workflow was rebuilt with a
+patient-aware split so the two specimens from one patient cannot be divided between
+training and test sets. The manuscript draft uses “disease group” and avoids “correct
+diagnosis,” “entity-specific,” and clinical-classifier wording.
+:::
+
+**How to read the metadata-only result.** This is a confounding diagnostic, not an
+alternative clinical classifier. If Sentrix/source/demographic metadata predict the
+study labels, then a methylation model can obtain high accuracy partly from signals
+aligned with those variables.
+
+```{r, out.width='100%'}
+knitr::include_graphics(file.path(root,"figures/web/Figure_metadata_only_classifier.png"))
+```
+
+All available metadata achieved mean repeated-CV balanced accuracy
+`r sprintf('%.3f',mean(ml$balanced_accuracy[ml$feature_set=='all_available_metadata']))`;
+Sentrix alone achieved
+`r sprintf('%.3f',mean(ml$balanced_accuracy[ml$feature_set=='sentrix_only']))`. This
+does not prove that the methylation classifier uses only batch, but it demonstrates
+that confounding variables contain substantial group information.
+
+The patient-aware logistic-regression model achieved
+`r sprintf('%.1f%%',100*pml$accuracy[pml$model=='Logistic regression'])` held-out
+accuracy and `r sprintf('%.1f%%',100*pml$balanced_accuracy[pml$model=='Logistic regression'])`
+balanced accuracy. These numbers describe one small held-out research cohort; they do
+not establish generalization to new institutions, batches, muscle sites, or diseases
+outside the six study groups.
+
+::: {.interpretation-box}
+<div class="box-title">Manuscript consequence</div>
+
+Report the models as proof-of-concept **study disease-group prediction**. Do not call
+the output a correct diagnosis or claim clinical diagnostic performance. Emphasize
+patient-aware splitting, structural confounding, small group sizes, and the need for
+independent external validation.
+:::
+
+# 9. Reviewer 2 issues that analysis alone cannot close
+
+::: {.reviewer-box}
+<div class="box-title">Reviewer 2: cohort selection</div>
+
+The reviewer doubts that the archive contained only six non-IBM IIM, NOS and thirteen
+non-ALS NMA cases over eight years, and asks how candidates, slides, clinical data,
+and pathologist disagreement were handled.
+:::
+
+::: {.decision-needed-box}
+<div class="box-title">Required owner: Juliane / clinical pathology team</div>
+
+Provide factual inclusion and exclusion counts, selection workflow, slide-review
+procedure, clinical-information review, and adjudication process. No methylation
+analysis can reconstruct these facts reliably.
+:::
+
+::: {.reviewer-box}
+<div class="box-title">Reviewer 2: cell composition and ALS wording</div>
+
+Either incorporate validated deconvolution estimates or state their absence as a
+major limitation. Further soften ALS/non-ALS language because there are only six ALS
+cases.
+:::
+
+::: {.response-box}
+<div class="box-title">Drafted response direction</div>
+
+No unsupported deconvolution has been added. Bulk-tissue and missing cell-composition
+adjustment are treated as major limitations. ALS–NMA results are labeled exploratory
+throughout the revised draft.
+:::
+
+::: {.reviewer-box}
+<div class="box-title">Reviewer 2: terminology and proofreading</div>
+
+Replace “diagnosis” with “disease group” where appropriate, remove residual
+disease-specific overstatement, correct placeholder supplementary references, and
+proofread the entire manuscript.
+:::
+
+::: {.response-box}
+<div class="box-title">Drafted response direction</div>
+
+A clean revised manuscript and point-by-point rebuttal have been generated with
+softened terminology. A final author-level proofread remains necessary, especially
+for clinical facts, supplementary numbering, authorship wording, and any text Juliane
+adds after this analytical revision.
+:::
+
+# Recommended decisions and next steps
+
+1. **Approve the central wording:** retain disease-group-associated methylation
+   structure as a pilot observation, not proof of disease-specific entities.
+2. **Approve the figure strategy:** keep baseline t-SNE, add the label-free correlation
+   heatmap as the unsupervised Figure 1 companion, and move/relabel the supervised
+   top-CpG heatmap.
+3. **Use sensitivity analyses transparently:** place PCA/t-SNE robustness,
+   confounder-colored panels, subset analyses, and adjusted differential results in
+   the supplement and cite them in the main text.
+4. **Keep ALS–NMA exploratory:** name the six-case limitation and avoid diagnostic or
+   validation language.
+5. **State the unresolved confounding clearly:** source/Sentrix cannot be separated
+   statistically from disease group in this cohort; missing validated cell-composition
+   estimates are a major limitation.
+6. **Supply the clinical facts:** archive screening, selection, slide/clinical review,
+   pathology adjudication, and the meaning of `lymphomonocytes` require Juliane's text.
+7. **Confirm authorship wording:** Juliane's email records agreement that Joseph can
+   be co-last author with equal contribution; confirm the precise author order and
+   contribution statement before submission.
+8. **Perform a final integrated proofread:** check terminology, cross-references,
+   supplementary table/figure numbers, author contributions, and consistency between
+   manuscript, legends, tables, and rebuttal.
+
+# Further questions for Juliane
+
+- What were the archive candidate totals, exclusion counts, and exclusion reasons?
+- Were all candidate cases within the eight-year period reviewed, and were slides and
+  clinical data reassessed?
+- Was there pathologist adjudication, and how should it be described?
+- What exactly do the `lymphomonocytes` low/medium/high categories represent?
+- Are validated inflammatory-cell, fiber-type, denervation, fibrosis, necrosis, or
+  pathology-severity estimates available with a defensible method and provenance?
+- Should the new label-free correlation heatmap replace Figure 1F or become a new
+  main/supplementary panel?
+- What final co-last author order and equal-contribution wording should be used?
+
+# Caveats and interpretation boundaries
+
+- The cohort has 73 samples from 72 patients and several small disease groups.
+- Disease group is structurally aligned with source, Sentrix, demographic, and biopsy-
+  site variables; association cannot be interpreted as disease causation.
+- Undefined or unavailable clinical/pathology variables were neither inferred nor
+  imputed.
+- t-SNE preserves local neighborhoods rather than trustworthy global distances; exact
+  cluster geometry should not be interpreted biologically.
+- Adjusted differential and supervised-learning results remain exploratory until
+  replicated in an independent, balanced external cohort.
+
+# Deliverable locations
+
+- Main publication candidates: `figures/main/`
+- Supplementary evidence: `figures/supplementary/`
+- Machine-readable results: `results/tables/`
+- PCA/t-SNE coordinates: `results/coordinates/`
+- Full manuscript-aligned analysis report: `reports/manuscript_analysis/`
+- This reviewer-to-solution report: `reports/reviewer_revision/juliane_revision.html`
