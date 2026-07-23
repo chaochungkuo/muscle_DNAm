@@ -179,7 +179,7 @@ We thank the reviewer for the careful reassessment. We revised the manuscript to
     add_action(
         doc,
         """
-Use "disease group" rather than "diagnosis" or "correct diagnosis" when describing supervised learning. State that ALS versus non-ALS NMA is exploratory because of the small ALS sample size and sensitivity to individual samples. Clarify inclusion/exclusion criteria and selection of available cases; if historical case availability cannot be reconstructed from the analysis side, defer the exact clinical/archive wording to Juliane.
+Use "disease group" rather than "diagnosis" or "correct diagnosis" when describing supervised learning. State that ALS versus non-ALS NMA is exploratory because of the small ALS sample size and sensitivity to individual samples. Clarify inclusion/exclusion criteria and selection of available cases; if historical case availability cannot be reconstructed from the analysis side, defer the exact clinical case-screening wording to Juliane.
 """,
     )
 
@@ -288,10 +288,10 @@ Replace Figure 1F with the full-matrix sample-to-sample correlation heatmap. Add
 The reviewer asks for PCA and t-SNE recomputed within subsets rather than by removing points from the full embedding: excluding MMC, excluding controls, in-house samples only, IBM versus non-IBM IIM, and ALS versus non-ALS NMA. The reviewer also asks whether apparent separation is robust to individual samples.
 """,
         """
-We recomputed PCA and t-SNE within each requested subset: excluding MMC, excluding controls, in-house data, IBM versus non-IBM IIM, and ALS versus non-ALS NMA. These analyses test whether the full-cohort structure is driven by one dominant group or by inclusion of external/public data. We use the term in-house data for the non-public samples; we do not present this subset as a pure single-institution or otherwise homogeneous cohort. The subset analyses showed that the full-cohort pattern was stronger than several clinically focused subsets, and ALS versus non-ALS NMA was the least stable comparison. We therefore retained this comparison only as exploratory and hypothesis-generating.
+We recomputed PCA and t-SNE within each requested subset: excluding MMC, excluding controls, in-house data, IBM versus non-IBM IIM, and ALS versus non-ALS NMA. These analyses test whether the full-cohort structure is driven by one dominant group or by inclusion of external/public data. We use the term in-house data as an analysis label for the non-public/non-GEO methylation samples generated within this study; we do not use it to imply a single-source or otherwise homogeneous cohort. The subset analyses showed that the full-cohort pattern was stronger than several clinically focused subsets, and ALS versus non-ALS NMA was the least stable comparison. We therefore retained this comparison only as exploratory and hypothesis-generating.
 """,
         """
-Use "in-house data" for the non-public sample subset, or delete the subset label if it implies a homogeneous archive category. In Results and Discussion, state that ALS versus non-ALS NMA is exploratory and sensitive to individual samples. Do not present subset separation as independent diagnostic proof.
+Define "in-house data" as the non-public/non-GEO methylation samples generated within this study. Do not imply that this subset is single-source or otherwise homogeneous. In Results and Discussion, state that ALS versus non-ALS NMA is exploratory and sensitive to individual samples. Do not present subset separation as independent diagnostic proof.
 """,
         [],
         [
@@ -324,7 +324,7 @@ Revise downstream Results and Discussion to state that supervised learning suppo
     doc.add_heading("Short wording checklist for final manuscript consistency", level=1)
     checks = [
         'Use "disease group" rather than "diagnosis" when referring to machine-learning labels.',
-        'Use "in-house data" for the non-public sample subset; avoid wording that implies a homogeneous archive category.',
+        'Use "in-house data" for the non-public/non-GEO methylation samples generated within this study; avoid wording that implies a homogeneous single-source subset.',
         'Use "disease-group-associated methylation structure" rather than "disease-specific signature" unless independently validated.',
         'State that t-SNE is qualitative and parameter-dependent; do not interpret global distances quantitatively.',
         'State that bulk-tissue methylation cannot separate primary disease-intrinsic epigenetic changes from tissue-composition effects.',
