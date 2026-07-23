@@ -67,14 +67,12 @@ def make_panel_card(panel: dict, width: int, height: int) -> Image.Image:
     draw.text((pad, pad - 4), panel["label"], font=PANEL_FONT, fill=(20, 30, 45))
     title_x = pad + label_w
     draw.text((title_x, pad + 2), panel["title"], font=SUBTITLE_FONT, fill=(30, 41, 59))
-    caption_top = height - 112
-    image_box = (pad, 92, width - pad, caption_top - 14)
+    image_box = (pad, 92, width - pad, height - 26)
     img = load_image(panel["stem"])
     contained = ImageOps.contain(img, (image_box[2] - image_box[0], image_box[3] - image_box[1]), Image.Resampling.LANCZOS)
     x = image_box[0] + ((image_box[2] - image_box[0]) - contained.width) // 2
     y = image_box[1] + ((image_box[3] - image_box[1]) - contained.height) // 2
     card.paste(contained, (x, y))
-    draw_wrapped(draw, (pad, caption_top + 4), panel["caption"], CAPTION_FONT, width=max(45, width // 28), line_spacing=5)
     return card
 
 
@@ -84,14 +82,13 @@ def build_figure(name: str, title: str, subtitle: str, panels: list[dict], ncols
     panel_w, panel_h = panel_size
     margin = 70
     gap = 34
-    title_h = 170
-    footer_h = 34
+    title_h = 120
+    footer_h = 0
     width = margin * 2 + ncols * panel_w + (ncols - 1) * gap
     height = margin + title_h + nrows * panel_h + (nrows - 1) * gap + footer_h
     canvas = Image.new("RGB", (width, height), "white")
     draw = ImageDraw.Draw(canvas)
     draw.text((margin, margin - 10), title, font=TITLE_FONT, fill=(15, 23, 42))
-    draw_wrapped(draw, (margin, margin + 62), subtitle, SUBTITLE_FONT, fill=(71, 85, 105), width=155)
     top = margin + title_h
     for idx, panel in enumerate(panels):
         row = idx // ncols
@@ -99,8 +96,6 @@ def build_figure(name: str, title: str, subtitle: str, panels: list[dict], ncols
         x = margin + col * (panel_w + gap)
         y = top + row * (panel_h + gap)
         canvas.paste(make_panel_card(panel, panel_w, panel_h), (x, y))
-    draw.text((margin, height - 34), "Generated from reviewer-round analysis figures; panel labels and captions added for rebuttal readability.", font=SMALL_FONT, fill=(100, 116, 139))
-
     png = OUT / f"{name}.png"
     pdf = OUT / f"{name}.pdf"
     tiff = OUT / f"{name}.tiff"
