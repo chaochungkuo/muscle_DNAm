@@ -12,6 +12,32 @@ subsets<-list(
   ALS_vs_nonALS_NMA=metadata$sample_group%in%c("ALS","NMA")
 )
 all_coords<-list(); summaries<-list()
+
+embedding_plot_large <- function(data, x, y, color_by, title, x_label = x, y_label = y) {
+  data$.color_group <- factor(data[[color_by]])
+  color_values <- data$.color_group
+  palette <- if (color_by == "display_group") disease_palette else discrete_palette(color_values)
+  ggplot2::ggplot(data, ggplot2::aes(x = .data[[x]], y = .data[[y]], color = .data$.color_group)) +
+    ggplot2::geom_point(size = 4.0, alpha = 0.92) +
+    ggplot2::scale_color_manual(values = palette, na.value = "#CCCCCC", drop = FALSE) +
+    ggplot2::labs(
+      x = x_label,
+      y = y_label,
+      color = ifelse(color_by == "display_group", "Disease group", gsub("_", " ", color_by)),
+      title = title
+    ) +
+    publication_theme(base_size = 16) +
+    ggplot2::theme(
+      plot.title = ggplot2::element_text(face = "bold", size = 17),
+      axis.title = ggplot2::element_text(face = "bold", size = 16),
+      axis.text = ggplot2::element_text(size = 13),
+      legend.title = ggplot2::element_text(face = "bold", size = 14),
+      legend.text = ggplot2::element_text(size = 12),
+      legend.key.size = grid::unit(0.45, "cm")
+    ) +
+    ggplot2::guides(color = ggplot2::guide_legend(override.aes = list(size = 4.2)))
+}
+
 if (!file.exists("results/coordinates/subset_coordinates.tsv")) {
 for(nm in names(subsets)){
   keep<-subsets[[nm]]; x<-mVals[,keep,drop=FALSE]; md<-metadata[keep,,drop=FALSE]
@@ -40,6 +66,20 @@ write.table(do.call(rbind,summaries),"results/tables/subset_analysis_summary.tsv
 } else {
   cached <- read.delim("results/coordinates/subset_coordinates.tsv", check.names=FALSE)
   all_coords <- split(cached, cached$subset)
+}
+
+# Always regenerate publication plots from cached/recomputed coordinates using
+# larger text and legends for A4-size multi-panel rebuttal figures.
+summary_df <- read.delim("results/tables/subset_analysis_summary.tsv", check.names = FALSE)
+for (nm in names(subsets)) {
+  d <- all_coords[[nm]]
+  ss <- summary_df[summary_df$subset == nm, , drop = FALSE]
+  pp <- embedding_plot_large(d, "PC1", "PC2", "display_group", paste("PCA:", gsub("_", " ", nm)),
+    sprintf("PC1 (%.2f%%)", 100 * ss$PC1_variance[1]),
+    sprintf("PC2 (%.2f%%)", 100 * ss$PC2_variance[1]))
+  pt <- embedding_plot_large(d, "TSNE1", "TSNE2", "display_group", paste("t-SNE:", gsub("_", " ", nm)))
+  save_publish_figure(pp, file.path("figures/supplementary", paste0("subset_", nm, "_PCA")), 8.4, 6.0, dpi = 900)
+  save_publish_figure(pt, file.path("figures/supplementary", paste0("subset_", nm, "_tSNE")), 8.4, 6.0, dpi = 900)
 }
 
 # Influence analysis in clinically relevant contrasts using leave-one-out
