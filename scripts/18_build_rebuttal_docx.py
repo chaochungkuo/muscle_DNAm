@@ -84,6 +84,17 @@ def add_title(doc: Document) -> None:
     run.font.color.rgb = RGBColor(90, 90, 90)
 
 
+def add_overall_strategy(doc: Document) -> None:
+    add_box(
+        doc,
+        "Overall response strategy",
+        """
+The revision follows one consistent logic. First, we acknowledge that this is a retrospective pilot cohort in which disease group, sample source, Sentrix ID, biopsy site, age, sex and tissue-composition features partly overlap. Second, we show the reviewer-requested robustness analyses: metadata-colored PCA/t-SNE, t-SNE parameter sensitivity, expanded PCA, full-matrix label-free correlation heatmap, recomputed subset analyses, covariate sensitivity where estimable, metadata-only classification and leakage-controlled patient-aware supervised learning. Third, we revise the manuscript claims accordingly: the data support disease-group-associated methylation structure in routine diagnostic muscle biopsies, but not a validated clinical diagnostic classifier or a disease-intrinsic methylation signature. ALS versus non-ALS NMA is retained as exploratory and hypothesis-generating.
+""",
+        "EEF4FF",
+    )
+
+
 def add_box(doc: Document, label: str, text: str, fill: str) -> None:
     table = doc.add_table(rows=1, cols=1)
     table.autofit = True
@@ -162,6 +173,7 @@ def build_doc() -> None:
     doc = Document()
     style_doc(doc)
     add_title(doc)
+    add_overall_strategy(doc)
 
     doc.add_heading("Reviewer 2", level=1)
     add_reviewer_comment(
@@ -179,7 +191,7 @@ We thank the reviewer for the careful reassessment. We revised the manuscript to
     add_action(
         doc,
         """
-Use "disease group" rather than "diagnosis" or "correct diagnosis" when describing supervised learning. State that ALS versus non-ALS NMA is exploratory because of the small ALS sample size and sensitivity to individual samples. Clarify inclusion/exclusion criteria and selection of available cases; if historical case availability cannot be reconstructed from the analysis side, defer the exact clinical case-screening wording to Juliane.
+Use "disease group" terminology when describing supervised learning performance. State that ALS versus non-ALS NMA is exploratory because of the small ALS sample size and sensitivity to individual samples. Clarify inclusion/exclusion criteria and selection of available cases; if historical case availability cannot be reconstructed from the analysis side, defer the exact clinical case-screening wording to Juliane.
 """,
     )
 
@@ -231,10 +243,10 @@ Methods: explicitly state Rtsne parameters, including pca=TRUE and initial_dims=
 The reviewer asks that the primary t-SNE, t-SNE sensitivity analyses and PCA coordinates be displayed with samples colored separately by potential confounder variables, including dataset source, Sentrix/chip, age, sex, biopsy site, inflammatory-cell estimates, fiber-type estimates, denervation estimates and pathology severity where available.
 """,
         """
-As suggested, we now provide PCA and t-SNE plots colored by available metadata variables, including disease group, sample source, Sentrix ID, age, sex, biopsy-site group and lymphomonocytic infiltration score where provided. We do not infer unavailable histopathological scores or convert uncertain annotations into low/intermediate/high categories ourselves. For variables not available in the provided metadata table, we state this limitation and defer final clinical annotation decisions to the neuropathology team. These visualizations show that several cohort variables overlap with the disease-group structure, which is now explicitly reflected in the revised interpretation.
+As suggested, we now provide PCA and t-SNE plots colored by available metadata variables, including disease group, sample source, Sentrix ID, age, sex, biopsy-site group and lymphomonocytic infiltration category where provided. The lymphomonocytic infiltration category is displayed only as supplied in the metadata table; we do not independently interpret the scoring scheme or convert uncertain annotations into low/intermediate/high categories ourselves. For requested variables not available in the provided metadata table, including validated fibrosis, necrosis, fiber-type and denervation scores, we state this limitation and defer final clinical annotation decisions to the neuropathology team. These visualizations show that several cohort variables overlap with the disease-group structure, which is now explicitly reflected in the revised interpretation.
 """,
         """
-Add supplementary response figures showing PCA and t-SNE colored by available metadata. In the rebuttal and manuscript, clearly distinguish available metadata from unavailable variables. Do not invent low/intermediate/high scores for lymphomonocytes or other histological features unless Juliane confirms the scoring.
+Add supplementary response figures showing PCA and t-SNE colored by available metadata. In the rebuttal and manuscript, clearly distinguish available metadata from unavailable variables. Display the lymphomonocytic infiltration category only as supplied, without independently interpreting its pathology meaning. Do not invent low/intermediate/high scores for lymphomonocytes, fibrosis, necrosis, fiber type, denervation or other histological features unless Juliane confirms the scoring.
 """,
         [],
         [
