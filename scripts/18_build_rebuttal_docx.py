@@ -131,6 +131,13 @@ def add_figure(doc: Document, filename: str, caption: str, width: float = 6.5) -
     r.font.size = Pt(8)
 
 
+def add_figure_reference(doc: Document, text: str) -> None:
+    p = doc.add_paragraph()
+    r = p.add_run("Figure reference: ")
+    r.bold = True
+    p.add_run(text.strip())
+
+
 def add_section(
     doc: Document,
     heading: str,
@@ -138,6 +145,7 @@ def add_section(
     response_text: str,
     action_text: str,
     figures: list[tuple[str, str]],
+    figure_references: list[str] | None = None,
 ) -> None:
     doc.add_heading(heading, level=2)
     add_reviewer_comment(doc, reviewer_text)
@@ -145,6 +153,8 @@ def add_section(
     add_action(doc, action_text)
     for filename, caption in figures:
         add_figure(doc, filename, caption)
+    for reference in figure_references or []:
+        add_figure_reference(doc, reference)
 
 
 def build_doc() -> None:
@@ -226,15 +236,10 @@ As suggested, we now provide PCA and t-SNE plots colored by available metadata v
         """
 Add supplementary response figures showing PCA and t-SNE colored by available metadata. In the rebuttal and manuscript, clearly distinguish available metadata from unavailable variables. Do not invent low/intermediate/high scores for lymphomonocytes or other histological features unless Juliane confirms the scoring.
 """,
+        [],
         [
-            (
-                "Supplementary_Response_Figure_S1_PCA_metadata_coloring.png",
-                "Supplementary Response Figure S1. PCA colored by available metadata variables requested by the reviewer.",
-            ),
-            (
-                "Supplementary_Response_Figure_S2_tSNE_metadata_coloring.png",
-                "Supplementary Response Figure S2. t-SNE colored by available metadata variables requested by the reviewer.",
-            ),
+            "Supplementary Response Figure S1 shows PCA colored by each available metadata variable.",
+            "Supplementary Response Figure S2 shows t-SNE colored by each available metadata variable.",
         ],
     )
 
@@ -250,11 +255,9 @@ We expanded the PCA analysis in three ways. First, we added scree and cumulative
         """
 Add Methods detail for scaled and unscaled PCA. Add Results text summarizing scree/cumulative variance and PC-metadata association. Replace ambiguous text such as "the unscaled analysis supports the presence of structure" with explicit wording: "the group-associated pattern was also visible in unscaled PCA, but leading PCs remained associated with cohort variables." Do not claim that PCA axes are disease-specific.
 """,
+        [],
         [
-            (
-                "Supplementary_Response_Figure_S3_PCA_sensitivity.png",
-                "Supplementary Response Figure S3. PCA sensitivity analysis, including scree/cumulative variance, multiple PC projections and unscaled PCA.",
-            )
+            "Supplementary Response Figure S3 provides the complete PCA sensitivity analysis, including scree/cumulative variance, multiple PC projections and unscaled PCA.",
         ],
     )
 
@@ -290,11 +293,9 @@ We recomputed PCA and t-SNE within each requested subset: excluding MMC, excludi
         """
 Use "in-house data" for the non-public sample subset, or delete the subset label if it implies a homogeneous archive category. In Results and Discussion, state that ALS versus non-ALS NMA is exploratory and sensitive to individual samples. Do not present subset separation as independent diagnostic proof.
 """,
+        [],
         [
-            (
-                "Supplementary_Response_Figure_S4_subset_analyses.png",
-                "Supplementary Response Figure S4. PCA and t-SNE recomputed independently within each requested subset, including the in-house-data subset and clinically focused ALS/non-ALS NMA and IBM/non-IBM IIM comparisons.",
-            )
+            "Supplementary Response Figure S4 provides PCA and t-SNE recomputed independently within each requested subset, including the in-house-data subset and clinically focused ALS/non-ALS NMA and IBM/non-IBM IIM comparisons.",
         ],
     )
 
