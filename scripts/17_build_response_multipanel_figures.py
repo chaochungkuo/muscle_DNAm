@@ -158,6 +158,14 @@ def main() -> None:
         panel_size=(1200, 1050),
     )
 
+    pca_metadata_panels = [
+        ("display_group", "Disease group"),
+        ("sentrix_id", "Sentrix ID"),
+        ("age_group", "Age group"),
+        ("gender", "Sex"),
+        ("muscle_location_group", "Biopsy site"),
+        ("city_of_origin", "City"),
+    ]
     metadata_panels = [
         ("display_group", "Disease group"),
         ("dataset_source", "Source"),
@@ -171,10 +179,10 @@ def main() -> None:
     build_figure(
         "Supplementary_Response_Figure_S1_PCA_metadata_coloring",
         "Supplementary Response Figure S1. PCA colored by available metadata",
-        "The same scaled PCA coordinates are recolored by each available metadata variable.",
+        "The same scaled PCA coordinates are recolored by selected available metadata variables.",
         [
             panel(chr(65 + i), f"pca_scaled_by_{stem}", title, "Same PCA coordinates; only the color annotation changes.")
-            for i, (stem, title) in enumerate(metadata_panels)
+            for i, (stem, title) in enumerate(pca_metadata_panels)
         ],
         ncols=2,
     )
