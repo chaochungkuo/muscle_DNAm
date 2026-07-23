@@ -91,7 +91,7 @@ def build_figure(name: str, title: str, subtitle: str, panels: list[dict], ncols
     canvas = Image.new("RGB", (width, height), "white")
     draw = ImageDraw.Draw(canvas)
     draw.text((margin, margin - 10), title, font=TITLE_FONT, fill=(15, 23, 42))
-    draw_wrapped(draw, (margin, margin + 62), subtitle, SUBTITLE_FONT, fill=(71, 85, 105), width=125)
+    draw_wrapped(draw, (margin, margin + 62), subtitle, SUBTITLE_FONT, fill=(71, 85, 105), width=155)
     top = margin + title_h
     for idx, panel in enumerate(panels):
         row = idx // ncols
@@ -120,7 +120,7 @@ def main() -> None:
     build_figure(
         "Response_Figure_1_unsupervised_structure",
         "Response Figure 1. Unsupervised methylation structure and cohort variables",
-        "Summary panels for Reviewer 1: disease-group-associated structure is present, while leading structure also overlaps with source, Sentrix and other cohort variables.",
+        "Summary panels for Reviewer 1: the full post-QC methylation matrix shows disease-group-associated structure in PCA, t-SNE and label-free sample correlation, while PC-metadata associations document overlap with technical and cohort variables that must be considered in the interpretation.",
         [
             panel("A", "Figure_unsupervised_PCA", "Baseline PCA", "Scaled PCA shows broad group-associated methylation structure."),
             panel("B", "Figure_unsupervised_tSNE", "Baseline t-SNE", "t-SNE visualizes local neighborhood structure among the studied groups."),
@@ -134,7 +134,7 @@ def main() -> None:
     build_figure(
         "Response_Figure_2_tsne_pca_sensitivity",
         "Response Figure 2. t-SNE and PCA sensitivity analyses",
-        "Summary panels for t-SNE defaults, seed/parameter sensitivity and PCA scaling concerns.",
+        "Summary panels addressing the reviewer’s t-SNE and PCA concerns: baseline structure was evaluated across random seeds, perplexities, initial PCA dimensions, direct pca=FALSE t-SNE and centered-scaled versus centered-unscaled PCA.",
         [
             panel("A", "Figure_tSNE_stability", "t-SNE parameter and seed sensitivity", "Main structure is not explained by one random seed or one parameter choice."),
             panel("B", "Figure_tSNE_direct_pca_false", "Direct t-SNE with pca=FALSE", "Direct full-matrix t-SNE provides an additional sensitivity check."),
@@ -148,7 +148,7 @@ def main() -> None:
     build_figure(
         "Response_Figure_3_downstream_robustness",
         "Response Figure 3. Downstream robustness checks",
-        "Summary panels for downstream confounder validation and leakage-fixed supervised learning.",
+        "Summary panels for downstream robustness: covariate-adjusted differential methylation where estimable, metadata-only classification as a confounding diagnostic and patient-aware leakage-controlled supervised learning define the appropriate scope of the results.",
         [
             panel("A", "Figure_differential_sensitivity", "Differential methylation sensitivity", "Covariate sensitivity shows which contrasts remain supported under estimable adjustments."),
             panel("B", "Figure_metadata_only_classifier", "Metadata-only classifier", "Metadata alone contains disease-group information, supporting cautious interpretation."),
@@ -179,7 +179,7 @@ def main() -> None:
     build_figure(
         "Supplementary_Response_Figure_S1_PCA_metadata_coloring",
         "Supplementary Response Figure S1. PCA colored by available metadata",
-        "The same scaled PCA coordinates are recolored by selected available metadata variables.",
+        "The same scaled PCA coordinates are recolored by selected available metadata variables so that disease-group structure can be visually compared with Sentrix ID, age, sex, biopsy site and city without changing the underlying PCA projection.",
         [
             panel(chr(65 + i), f"pca_scaled_by_{stem}", title, "Same PCA coordinates; only the color annotation changes.")
             for i, (stem, title) in enumerate(pca_metadata_panels)
@@ -189,7 +189,7 @@ def main() -> None:
     build_figure(
         "Supplementary_Response_Figure_S2_tSNE_metadata_coloring",
         "Supplementary Response Figure S2. t-SNE colored by available metadata",
-        "The same baseline t-SNE coordinates are recolored by each available metadata variable.",
+        "The same baseline t-SNE coordinates are recolored by each available metadata variable requested by the reviewer, allowing direct visual comparison of disease group with source, Sentrix ID, demographic variables, biopsy site, city and supplied lymphomonocyte category.",
         [
             panel(chr(65 + i), f"tsne_baseline_by_{stem}", title, "Same t-SNE coordinates; only the color annotation changes.")
             for i, (stem, title) in enumerate(metadata_panels)
@@ -199,7 +199,7 @@ def main() -> None:
     build_figure(
         "Supplementary_Response_Figure_S3_PCA_sensitivity",
         "Supplementary Response Figure S3. Expanded PCA sensitivity",
-        "Multiple PC projections and scaled/unscaled PCA evaluate whether conclusions depend on a single projection or scaling choice.",
+        "Expanded PCA scrutiny requested by the reviewer: cumulative variance, multiple pairwise PC projections and centered-scaled versus centered-unscaled PCA were used to test whether the observed structure depends on one projection or one scaling choice.",
         [
             panel("A", "PCA_cumulative_variance", "Cumulative variance", "Cumulative variance explained by leading PCs."),
             panel("B", "PCA_scaled_PC1_PC2", "Scaled PC1–PC2", "Primary scaled PCA projection."),
@@ -214,7 +214,7 @@ def main() -> None:
     build_figure(
         "Supplementary_Response_Figure_S4_subset_analyses",
         "Supplementary Response Figure S4. Recomputed subset analyses",
-        "PCA and t-SNE were recomputed within each subset, not subsetted from the full-cohort embedding. The reviewer-requested in-house analysis is labeled as in-house data.",
+        "PCA and t-SNE were recomputed independently within each reviewer-requested subset rather than by removing points from the full-cohort embedding, allowing clinically focused comparisons and source-sensitive analyses to be evaluated on their own structure.",
         [
             panel("A", "subset_excluding_MMC_PCA", "Excluding MMC — PCA", "Recomputed PCA after excluding MMC."),
             panel("B", "subset_excluding_MMC_tSNE", "Excluding MMC — t-SNE", "Recomputed t-SNE after excluding MMC."),
@@ -232,7 +232,7 @@ def main() -> None:
     build_figure(
         "Supplementary_Response_Figure_S5_ALS_NMA_robustness",
         "Supplementary Response Figure S5. Exploratory ALS versus non-ALS NMA robustness",
-        "The ALS versus non-ALS NMA comparison was evaluated separately because it is the smallest clinically focused comparison and is sensitive to individual samples.",
+        "The ALS versus non-ALS NMA comparison was evaluated separately because it is the smallest clinically focused comparison; subset PCA/t-SNE and leave-one-sample checks support keeping this result exploratory and hypothesis-generating.",
         [
             panel("A", "subset_ALS_vs_nonALS_NMA_PCA", "ALS vs non-ALS NMA — PCA", "Subset PCA shows overlap in the smallest clinically focused comparison."),
             panel("B", "subset_ALS_vs_nonALS_NMA_tSNE", "ALS vs non-ALS NMA — t-SNE", "Subset t-SNE supports exploratory rather than definitive ALS/NMA interpretation."),
